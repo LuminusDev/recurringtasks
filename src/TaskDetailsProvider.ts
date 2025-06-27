@@ -189,8 +189,91 @@ export class TaskDetailsProvider {
         const getStatusClass = () => {
             const now = new Date();
             if (task.dueDate < now) {return 'overdue';}
-            if (task.dueDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) {return 'due-soon';}
+            if (isDueSoon(task)) {return 'due-soon';}
             return 'normal';
+        };
+
+        const isDueSoon = (task: Task) => {
+            const now = new Date();
+            const dueDate = task.dueDate;
+            
+            // Calculate "due soon" threshold based on periodicity
+            const dueSoonThreshold = getDueSoonThreshold(task);
+            const dueSoonDate = new Date(now.getTime() + dueSoonThreshold);
+            
+            return dueDate <= dueSoonDate && dueDate > now;
+        };
+
+        const getDueSoonThreshold = (task: Task) => {
+            const { value, unit } = task.periodicity;
+            
+            // Special handling for daily tasks
+            if (unit === 'days' && value === 1) {
+                // For daily tasks, consider "due soon" if due within 6 hours
+                return 6 * 60 * 60 * 1000; // 6 hours
+            }
+            
+            // Calculate threshold as a percentage of the periodicity
+            let thresholdPercentage = 0.25; // 25% of the period
+            
+            // Adjust percentage based on periodicity type
+            switch (unit) {
+                case 'days':
+                    if (value <= 3) {
+                        thresholdPercentage = 0.33; // 33% for 2-3 day tasks
+                    } else {
+                        thresholdPercentage = 0.25; // 25% for longer daily tasks
+                    }
+                    break;
+                case 'weeks':
+                    if (value <= 1) {
+                        thresholdPercentage = 0.3; // 30% for weekly tasks
+                    } else if (value <= 2) {
+                        thresholdPercentage = 0.25; // 25% for bi-weekly tasks
+                    } else {
+                        thresholdPercentage = 0.2; // 20% for longer weekly tasks
+                    }
+                    break;
+                case 'months':
+                    if (value <= 1) {
+                        thresholdPercentage = 0.2; // 20% for monthly tasks
+                    } else if (value <= 3) {
+                        thresholdPercentage = 0.15; // 15% for quarterly tasks
+                    } else {
+                        thresholdPercentage = 0.1; // 10% for longer monthly tasks
+                    }
+                    break;
+                case 'years':
+                    thresholdPercentage = 0.05; // 5% for yearly tasks
+                    break;
+            }
+            
+            // Calculate threshold in milliseconds
+            let thresholdMs: number;
+            switch (unit) {
+                case 'days':
+                    thresholdMs = value * 24 * 60 * 60 * 1000 * thresholdPercentage;
+                    break;
+                case 'weeks':
+                    thresholdMs = value * 7 * 24 * 60 * 60 * 1000 * thresholdPercentage;
+                    break;
+                case 'months':
+                    // Approximate: 30.44 days per month
+                    thresholdMs = value * 30.44 * 24 * 60 * 60 * 1000 * thresholdPercentage;
+                    break;
+                case 'years':
+                    // Approximate: 365.25 days per year
+                    thresholdMs = value * 365.25 * 24 * 60 * 60 * 1000 * thresholdPercentage;
+                    break;
+                default:
+                    thresholdMs = value * 24 * 60 * 60 * 1000 * thresholdPercentage;
+            }
+            
+            // Apply minimum and maximum bounds (but not for daily tasks)
+            const minThreshold = 24 * 60 * 60 * 1000; // 1 day minimum
+            const maxThreshold = 30 * 24 * 60 * 60 * 1000; // 30 days maximum
+            
+            return Math.max(minThreshold, Math.min(maxThreshold, thresholdMs));
         };
 
         const getStatusInfo = () => {
@@ -214,7 +297,7 @@ export class TaskDetailsProvider {
                         description: `${progress}% complete but overdue`
                     };
                 }
-            } else if (task.dueDate.getTime() - now.getTime() < 3 * 24 * 60 * 60 * 1000) {
+            } else if (isDueSoon(task)) {
                 // Due soon
                 if (progress >= 80) {
                     return {
@@ -279,16 +362,44 @@ export class TaskDetailsProvider {
 
         const getTimeProgress = () => {
             const now = new Date();
-            const startDate = task.startDate;
             const dueDate = task.dueDate;
             
-            // Calculate progress based on position between start and due date
-            const totalDuration = dueDate.getTime() - startDate.getTime();
-            const elapsed = now.getTime() - startDate.getTime();
+            // For recurring tasks, calculate progress based on the current period
+            // Find the start of the current period (previous due date or start date)
+            const currentPeriodStart = getCurrentPeriodStart();
+            
+            // Calculate progress based on position within the current period
+            const totalDuration = dueDate.getTime() - currentPeriodStart.getTime();
+            const elapsed = now.getTime() - currentPeriodStart.getTime();
             
             // Ensure progress is between 0 and 100
             const progress = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
             return Math.round(progress);
+        };
+
+        const getCurrentPeriodStart = () => {
+            const { value, unit } = task.periodicity;
+            const dueDate = task.dueDate;
+            
+            // Calculate the start of the current period by subtracting the periodicity
+            const currentPeriodStart = new Date(dueDate);
+            
+            switch (unit) {
+                case 'days':
+                    currentPeriodStart.setDate(currentPeriodStart.getDate() - value);
+                    break;
+                case 'weeks':
+                    currentPeriodStart.setDate(currentPeriodStart.getDate() - (value * 7));
+                    break;
+                case 'months':
+                    currentPeriodStart.setMonth(currentPeriodStart.getMonth() - value);
+                    break;
+                case 'years':
+                    currentPeriodStart.setFullYear(currentPeriodStart.getFullYear() - value);
+                    break;
+            }
+            
+            return currentPeriodStart;
         };
 
         const commentsHtml = task.comments.length > 0 

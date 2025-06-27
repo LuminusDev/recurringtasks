@@ -45,7 +45,7 @@ export class TaskManager {
      * Calculates the next due date based on periodicity
      */
     private calculateNextDueDate(currentDueDate: Date, periodicity: Periodicity): Date {
-        const nextDate = new Date(currentDueDate);
+        const nextDate = new Date();
         
         switch (periodicity.unit) {
             case 'days':

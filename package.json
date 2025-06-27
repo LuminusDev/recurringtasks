@@ -33,28 +33,28 @@
     },
     "commands": [
       {
-        "command": "recurringtasks.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "recurringtasks.addTask",
-        "title": "Add Task"
+        "title": "Recurring Tasks: Add Task",
+        "icon": "$(add)"
       },
       {
         "command": "recurringtasks.validateTask",
-        "title": "Validate Task"
+        "title": "Recurring Tasks: Validate Task",
+        "icon": "$(check)"
       },
       {
         "command": "recurringtasks.deleteTask",
-        "title": "Delete Task"
+        "title": "Recurring Tasks: Delete Task",
+        "icon": "$(trash)"
       },
       {
         "command": "recurringtasks.refreshTasks",
-        "title": "Refresh Tasks"
+        "title": "Recurring Tasks: Refresh Tasks",
+        "icon": "$(refresh)"
       },
       {
         "command": "recurringtasks.showTaskDetails",
-        "title": "Show Task Details"
+        "title": "Recurring Tasks: Show Task Details"
       }
     ],
     "menus": {
