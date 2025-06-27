@@ -19,16 +19,24 @@ export class StorageManager {
     getTasks(): Task[] {
         const storedTasks = this.context.globalState.get<Task[]>(this.storageKey, []);
         
-        // Convert date strings back to Date objects
+        // Convert date strings back to Date objects and ensure comments have IDs
         return storedTasks.map(task => ({
             ...task,
             startDate: new Date(task.startDate),
             dueDate: new Date(task.dueDate),
             comments: task.comments.map(comment => ({
                 ...comment,
+                id: comment.id || this.generateCommentId(), // Add ID if missing
                 date: new Date(comment.date)
             }))
         }));
+    }
+
+    /**
+     * Generates a unique ID for a comment
+     */
+    private generateCommentId(): string {
+        return 'comment_' + Date.now().toString() + Math.random().toString(36).substr(2, 9);
     }
 
     /**

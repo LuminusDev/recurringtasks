@@ -70,6 +70,9 @@ export class TaskDetailsProvider {
                     case 'deleteComment':
                         TaskDetailsProvider.handleDeleteComment(message.taskId, message.commentId);
                         return;
+                    case 'confirmDeleteComment':
+                        TaskDetailsProvider.handleConfirmDeleteComment(message.taskId, message.commentId);
+                        return;
                 }
             },
             undefined,
@@ -133,6 +136,21 @@ export class TaskDetailsProvider {
             TaskDetailsProvider.refreshTaskProvider();
         } else {
             vscode.window.showErrorMessage('Failed to delete comment');
+        }
+    }
+
+    /**
+     * Handles confirming and deleting a comment
+     */
+    private static async handleConfirmDeleteComment(taskId: string, commentId: string): Promise<void> {
+        const result = await vscode.window.showWarningMessage(
+            'Are you sure you want to delete this comment?',
+            { modal: true },
+            'Delete'
+        );
+
+        if (result === 'Delete') {
+            TaskDetailsProvider.handleDeleteComment(taskId, commentId);
         }
     }
 
@@ -287,8 +305,14 @@ export class TaskDetailsProvider {
                     <div class="comment-edit-form" id="comment-edit-${comment.id}" style="display: none;">
                         <textarea class="comment-edit-textarea" id="comment-edit-textarea-${comment.id}">${comment.text}</textarea>
                         <div class="comment-edit-actions">
-                            <button class="save-comment-btn codicon codicon-check" onclick="saveComment('${comment.id}')">Save</button>
-                            <button class="cancel-comment-btn codicon codicon-close" onclick="cancelEdit('${comment.id}')">Cancel</button>
+                            <button class="save-comment-btn" onclick="saveComment('${comment.id}')">
+                                <span class="codicon codicon-check"></span>
+                                Save
+                            </button>
+                            <button class="cancel-comment-btn" onclick="cancelEdit('${comment.id}')">
+                                <span class="codicon codicon-close"></span>
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -517,26 +541,25 @@ export class TaskDetailsProvider {
         .comment-edit-actions {
             display: flex;
             gap: 8px;
+            justify-content: flex-end;
         }
 
         .save-comment-btn,
         .cancel-comment-btn {
-            padding: 4px 12px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .save-comment-btn {
             background-color: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .save-comment-btn:hover {
+        .save-comment-btn:hover,
+        .cancel-comment-btn:hover {
             background-color: var(--vscode-button-hoverBackground);
         }
 
@@ -949,13 +972,11 @@ export class TaskDetailsProvider {
         
         // Delete comment functionality
         function deleteComment(commentId) {
-            if (confirm('Are you sure you want to delete this comment?')) {
-                vscode.postMessage({
-                    command: 'deleteComment',
-                    taskId: taskId,
-                    commentId: commentId
-                });
-            }
+            vscode.postMessage({
+                command: 'confirmDeleteComment',
+                taskId: taskId,
+                commentId: commentId
+            });
         }
         
         // Handle Enter key in add comment textarea
