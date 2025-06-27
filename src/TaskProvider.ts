@@ -12,7 +12,7 @@ export class TaskTreeItem extends vscode.TreeItem {
         super(task.title, collapsibleState);
         
         this.tooltip = `${task.title} - ${task.description}`;
-        this.description = this.getTimeRemaining();
+        this.description = this.getComprehensiveStatus();
         
         // Add command to show task details when clicked
         this.command = {
@@ -55,6 +55,86 @@ export class TaskTreeItem extends vscode.TreeItem {
             const diffWeeks = Math.ceil(diffDays / 7);
             return `Due in ${diffWeeks} week${diffWeeks !== 1 ? 's' : ''}`;
         }
+    }
+
+    /**
+     * Calculates the time progress percentage
+     */
+    private getTimeProgress(): number {
+        const now = new Date();
+        const startDate = this.task.startDate;
+        const dueDate = this.task.dueDate;
+        
+        // Calculate progress based on position between start and due date
+        const totalDuration = dueDate.getTime() - startDate.getTime();
+        const elapsed = now.getTime() - startDate.getTime();
+        
+        // Ensure progress is between 0 and 100
+        const progress = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
+        return Math.round(progress);
+    }
+
+    /**
+     * Returns a combined status and progress description
+     */
+    private getMixedStatusAndProgress(): string {
+        const progress = this.getTimeProgress();
+        const timeRemaining = this.getTimeRemaining();
+        
+        // Create status indicators
+        let statusIndicator = '';
+        if (this.isOverdue()) {
+            statusIndicator = '🔴 ';
+        } else if (this.isDueSoon()) {
+            statusIndicator = '🟡 ';
+        } else {
+            statusIndicator = '✅ ';
+        }
+        
+        // Create a simple progress bar using Unicode characters
+        const progressBar = this.createProgressBar(progress);
+        
+        // Combine progress and status
+        return `${statusIndicator}${progressBar} ${progress}% | ${timeRemaining}`;
+    }
+
+    /**
+     * Creates a comprehensive status that considers both urgency and progress
+     */
+    private getComprehensiveStatus(): string {
+        const progress = this.getTimeProgress();
+        const timeRemaining = this.getTimeRemaining();
+        
+        // Determine status based on both urgency and progress
+        if (this.isOverdue()) {
+            if (progress >= 100) {
+                return `🔴 Overdue (${timeRemaining})`;
+            } else {
+                return `🔴 Overdue - ${progress}% complete (${timeRemaining})`;
+            }
+        } else if (this.isDueSoon()) {
+            if (progress >= 80) {
+                return `🟡 Due soon - ${progress}% complete (${timeRemaining})`;
+            } else {
+                return `🟡 Due soon - ${progress}% complete (${timeRemaining})`;
+            }
+        } else {
+            if (progress >= 100) {
+                return `✅ Complete (${timeRemaining})`;
+            } else {
+                return `✅ ${progress}% complete (${timeRemaining})`;
+            }
+        }
+    }
+
+    /**
+     * Creates a simple progress bar using Unicode characters
+     */
+    private createProgressBar(progress: number): string {
+        const filledBlocks = Math.floor(progress / 10);
+        const emptyBlocks = 10 - filledBlocks;
+        
+        return '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
     }
 
     /**

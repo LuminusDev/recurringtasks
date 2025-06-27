@@ -35,6 +35,13 @@ export class TaskManager {
     }
 
     /**
+     * Generates a unique ID for a comment
+     */
+    private generateCommentId(): string {
+        return 'comment_' + Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    }
+
+    /**
      * Calculates the next due date based on periodicity
      */
     private calculateNextDueDate(currentDueDate: Date, periodicity: Periodicity): Date {
@@ -99,6 +106,7 @@ export class TaskManager {
         
         // Add the validation comment
         const comment: Comment = {
+            id: this.generateCommentId(),
             text: commentText,
             date: new Date()
         };
@@ -108,6 +116,81 @@ export class TaskManager {
         // Calculate the next due date based on periodicity
         task.dueDate = this.calculateNextDueDate(task.dueDate, task.periodicity);
         
+        this.saveTasks();
+        
+        return task;
+    }
+
+    /**
+     * Adds a comment to a task
+     */
+    addComment(taskId: string, commentText: string): Task | null {
+        const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+        
+        if (taskIndex === -1) {
+            return null; // Task not found
+        }
+
+        const task = this.tasks[taskIndex];
+        
+        // Add the comment
+        const comment: Comment = {
+            id: this.generateCommentId(),
+            text: commentText,
+            date: new Date()
+        };
+        
+        task.comments.push(comment);
+        this.saveTasks();
+        
+        return task;
+    }
+
+    /**
+     * Updates a comment
+     */
+    updateComment(taskId: string, commentId: string, newText: string): Task | null {
+        const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+        
+        if (taskIndex === -1) {
+            return null; // Task not found
+        }
+
+        const task = this.tasks[taskIndex];
+        const commentIndex = task.comments.findIndex(comment => comment.id === commentId);
+        
+        if (commentIndex === -1) {
+            return null; // Comment not found
+        }
+
+        // Update the comment
+        task.comments[commentIndex].text = newText;
+        task.comments[commentIndex].date = new Date(); // Update the date to show it was modified
+        
+        this.saveTasks();
+        
+        return task;
+    }
+
+    /**
+     * Deletes a comment
+     */
+    deleteComment(taskId: string, commentId: string): Task | null {
+        const taskIndex = this.tasks.findIndex(task => task.id === taskId);
+        
+        if (taskIndex === -1) {
+            return null; // Task not found
+        }
+
+        const task = this.tasks[taskIndex];
+        const commentIndex = task.comments.findIndex(comment => comment.id === commentId);
+        
+        if (commentIndex === -1) {
+            return null; // Comment not found
+        }
+
+        // Remove the comment
+        task.comments.splice(commentIndex, 1);
         this.saveTasks();
         
         return task;

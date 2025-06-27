@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { StorageManager } from './StorageManager';
 import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
+import { TaskDetailsProvider } from './TaskDetailsProvider';
 import { Commands } from './Commands';
 
 // Global variables to maintain references
@@ -26,8 +27,14 @@ export function activate(context: vscode.ExtensionContext) {
 		// Initialize the task manager with storage
 		taskManager = new TaskManager(storageManager);
 		
+		// Set the task manager in the TaskDetailsProvider for comment management
+		TaskDetailsProvider.setTaskManager(taskManager);
+		
 		// Initialize the task provider
 		taskProvider = new TaskProvider();
+		
+		// Set the task provider in the TaskDetailsProvider for refreshing the sidebar
+		TaskDetailsProvider.setTaskProvider(taskProvider);
 		
 		// Initialize commands with task manager and provider
 		commands = new Commands(taskManager, taskProvider, context.extensionUri);

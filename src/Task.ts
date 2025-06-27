@@ -12,6 +12,8 @@ export interface Periodicity {
  * Represents a comment/validation for a task
  */
 export interface Comment {
+    /** Unique identifier for the comment */
+    id: string;
     /** The text content of the comment */
     text: string;
     /** The date when the comment was added */
