@@ -74,6 +74,9 @@ export class TaskDetailsProvider {
                     case 'confirmDeleteComment':
                         TaskDetailsProvider.handleConfirmDeleteComment(message.taskId, message.commentId);
                         return;
+                    case 'openLink':
+                        TaskDetailsProvider.handleOpenLink(message.url);
+                        return;
                 }
             },
             undefined,
@@ -156,6 +159,17 @@ export class TaskDetailsProvider {
     }
 
     /**
+     * Handles opening links in the default browser
+     */
+    private static async handleOpenLink(url: string): Promise<void> {
+        try {
+            await vscode.env.openExternal(vscode.Uri.parse(url));
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to open link: ${error}`);
+        }
+    }
+
+    /**
      * Refreshes the panel with updated task data
      */
     private static refreshPanel(task: Task): void {
@@ -193,7 +207,16 @@ export class TaskDetailsProvider {
             return 'normal';
         };
 
-
+        // Function to convert URLs to clickable links
+        const convertUrlsToLinks = (text: string): string => {
+            // URL regex pattern that matches http, https, ftp, and www URLs
+            const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|ftp:\/\/[^\s]+)/gi;
+            return text.replace(urlRegex, (url) => {
+                // Ensure URLs have a protocol
+                const fullUrl = url.startsWith('www.') ? 'https://' + url : url;
+                return `<a href="${fullUrl}" class="clickable-link" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            });
+        };
 
         const getStatusInfo = () => {
             const progress = TaskStatusUtil.getTimeProgress(task);
@@ -259,8 +282,6 @@ export class TaskDetailsProvider {
             }
         };
 
-
-
         const commentsHtml = task.comments.length > 0 
             ? task.comments.map(comment => `
                 <div class="comment" data-comment-id="${comment.id}">
@@ -271,7 +292,7 @@ export class TaskDetailsProvider {
                             <button class="delete-comment-btn codicon codicon-trash" onclick="deleteComment('${comment.id}')" title="Delete comment"></button>
                         </div>
                     </div>
-                    <div class="comment-content" id="comment-content-${comment.id}">${comment.text}</div>
+                    <div class="comment-content" id="comment-content-${comment.id}">${convertUrlsToLinks(comment.text)}</div>
                     <div class="comment-edit-form" id="comment-edit-${comment.id}" style="display: none;">
                         <textarea class="comment-edit-textarea" id="comment-edit-textarea-${comment.id}">${comment.text}</textarea>
                         <div class="comment-edit-actions">
@@ -372,7 +393,7 @@ export class TaskDetailsProvider {
         }
 
         .status-badge.due-soon {
-            background-color: var(--vscode-warningForeground);
+            background-color: var(--vscode-notificationsWarningIcon-foreground);
             color: var(--vscode-activityBarBadge-foreground);
         }
 
@@ -585,7 +606,7 @@ export class TaskDetailsProvider {
         }
 
         .status-icon.due-soon {
-            color: var(--vscode-warningForeground);
+            color: var(--vscode-notificationsWarningIcon-foreground);
         }
 
         .status-icon.normal {
@@ -607,7 +628,7 @@ export class TaskDetailsProvider {
         }
 
         .task-icon.due-soon {
-            color: var(--vscode-warningForeground);
+            color: var(--vscode-notificationsWarningIcon-foreground);
         }
 
         .task-icon.normal {
@@ -657,7 +678,7 @@ export class TaskDetailsProvider {
         }
 
         .progress-fill.due-soon {
-            background: linear-gradient(90deg, var(--vscode-warningForeground) 0%, #ffd93d 100%);
+            background: linear-gradient(90deg, #ffa726 0%, #ff9800 100%);
         }
 
         .progress-fill.normal {
@@ -692,9 +713,9 @@ export class TaskDetailsProvider {
         }
 
         .time-circle.due-soon {
-            background: var(--vscode-warningForeground);
+            background: var(--vscode-notificationsWarningIcon-foreground);
             color: white;
-            border-color: var(--vscode-warningForeground);
+            border-color: var(--vscode-notificationsWarningIcon-foreground);
         }
 
         .time-circle.normal {
@@ -786,6 +807,15 @@ export class TaskDetailsProvider {
             margin-bottom: 10px;
             font-style: italic;
         }
+
+        .clickable-link {
+            color: var(--vscode-textLink-foreground);
+            text-decoration: underline;
+        }
+
+        .clickable-link:hover {
+            color: var(--vscode-textLink-activeForeground);
+        }
     </style>
 </head>
 <body>
@@ -794,7 +824,7 @@ export class TaskDetailsProvider {
             <span class="task-icon ${getStatusClass()}">${getStatusClass() === 'overdue' ? '🔴' : getStatusClass() === 'due-soon' ? '🟡' : '✅'}</span>
             ${task.title}
         </div>
-        <div class="task-description">${task.description}</div>
+        <div class="task-description">${convertUrlsToLinks(task.description)}</div>
     </div>
 
     <div class="visual-section">
@@ -961,6 +991,18 @@ export class TaskDetailsProvider {
             if (e.key === 'Enter' && e.ctrlKey && e.target.classList.contains('comment-edit-textarea')) {
                 const commentId = e.target.id.replace('comment-edit-textarea-', '');
                 saveComment(commentId);
+            }
+        });
+        
+        // Handle link clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('clickable-link')) {
+                e.preventDefault();
+                const url = e.target.href;
+                vscode.postMessage({
+                    command: 'openLink',
+                    url: url
+                });
             }
         });
     </script>
