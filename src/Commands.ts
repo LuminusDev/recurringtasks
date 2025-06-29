@@ -4,6 +4,7 @@ import { TaskProvider } from './TaskProvider';
 import { TaskTreeItem } from './TaskProvider';
 import { Periodicity } from './Task';
 import { TaskDetailsProvider } from './TaskDetailsProvider';
+import { JiraService } from './JiraService';
 
 /**
  * Handles all command implementations for the recurring tasks extension
@@ -12,11 +13,13 @@ export class Commands {
     private taskManager: TaskManager;
     private taskProvider: TaskProvider;
     private extensionUri: vscode.Uri;
+    private jiraService: JiraService;
 
     constructor(taskManager: TaskManager, taskProvider: TaskProvider, extensionUri: vscode.Uri) {
         this.taskManager = taskManager;
         this.taskProvider = taskProvider;
         this.extensionUri = extensionUri;
+        this.jiraService = new JiraService();
     }
 
     /**
@@ -78,6 +81,31 @@ export class Commands {
             this.setPreferredCalendar();
         });
 
+        // Create JIRA Issue command
+        const createJiraIssueCommand = vscode.commands.registerCommand('recurringtasks.createJiraIssue', async (item?: TaskTreeItem) => {
+            // If no item provided (e.g., called via keybinding), try to get selected task
+            if (!item) {
+                const selectedTask = await this.getSelectedTask();
+                if (selectedTask) {
+                    this.createJiraIssue(selectedTask);
+                } else {
+                    vscode.window.showWarningMessage('Please select a task first to create a JIRA issue.');
+                }
+            } else {
+                this.createJiraIssue(item);
+            }
+        });
+
+        // Configure JIRA command
+        const configureJiraCommand = vscode.commands.registerCommand('recurringtasks.configureJira', () => {
+            this.configureJira();
+        });
+
+        // Test JIRA Connection command
+        const testJiraConnectionCommand = vscode.commands.registerCommand('recurringtasks.testJiraConnection', () => {
+            this.testJiraConnection();
+        });
+
         // Add all commands to subscriptions
         context.subscriptions.push(
             addTaskCommand,
@@ -88,7 +116,10 @@ export class Commands {
             refreshTasksCommand,
             showTaskDetailsCommand,
             createMeetingCommand,
-            setPreferredCalendarCommand
+            setPreferredCalendarCommand,
+            createJiraIssueCommand,
+            configureJiraCommand,
+            testJiraConnectionCommand
         );
     }
 
@@ -113,6 +144,12 @@ export class Commands {
                 prompt: `Validate task: ${item.task.title}`,
                 placeHolder: 'Enter a comment for this validation (optional)'
             });
+
+            // Check if user cancelled (pressed Escape)
+            if (comment === undefined) {
+                vscode.window.showInformationMessage('Task validation cancelled');
+                return;
+            }
 
             // Validate the task (comment can be empty)
             const updatedTask = this.taskManager.validateTask(item.task.id, comment || '');
@@ -300,10 +337,14 @@ export class Commands {
             }
         );
         
-        if (choice) {
-            await vscode.workspace.getConfiguration('recurringTasks').update('preferredCalendar', choice, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`Preferred calendar set to: ${choice}`);
+        // Check if user cancelled (pressed Escape)
+        if (!choice) {
+            vscode.window.showInformationMessage('Calendar preference setting cancelled');
+            return;
         }
+        
+        await vscode.workspace.getConfiguration('recurringTasks').update('preferredCalendar', choice, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`Preferred calendar set to: ${choice}`);
     }
 
     /**
@@ -327,6 +368,235 @@ export class Commands {
         } catch (error) {
             console.error('Error getting selected task:', error);
             return undefined;
+        }
+    }
+
+    /**
+     * Creates a JIRA issue from a task
+     */
+    private async createJiraIssue(item: TaskTreeItem): Promise<void> {
+        try {
+            // Initialize JIRA service
+            const initialized = await this.jiraService.initialize();
+            
+            if (!initialized) {
+                const result = await vscode.window.showWarningMessage(
+                    'JIRA is not configured. Would you like to configure it now?',
+                    'Configure JIRA',
+                    'Cancel'
+                );
+                
+                if (result === 'Configure JIRA') {
+                    await this.configureJira();
+                }
+                return;
+            }
+
+            const task = item.task;
+
+            // Show progress
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: `Creating JIRA issue for "${task.title}"...`,
+                cancellable: false
+            }, async (progress) => {
+                progress.report({ increment: 0, message: 'Connecting to JIRA...' });
+
+                // Get projects and let user choose
+                const projectsResult = await this.jiraService.getProjects();
+                
+                if (!projectsResult.success) {
+                    vscode.window.showErrorMessage(`Failed to get JIRA projects: ${projectsResult.message}`);
+                    return;
+                }
+
+                progress.report({ increment: 30, message: 'Fetching project information...' });
+
+                const config = this.jiraService.getConfig();
+                let selectedProjectKey = config?.defaultProjectKey;
+                let selectedIssueType = config?.defaultIssueType;
+
+                // Let user choose project if multiple are available
+                if (projectsResult.projects && projectsResult.projects.length > 1) {
+                    // Sort so the default project is first
+                    let sortedProjects = projectsResult.projects;
+                    if (selectedProjectKey) {
+                        sortedProjects = [
+                            ...projectsResult.projects.filter(p => p.key === selectedProjectKey),
+                            ...projectsResult.projects.filter(p => p.key !== selectedProjectKey)
+                        ];
+                    }
+                    const projectItems = sortedProjects.map(p => ({
+                        label: p.key,
+                        description: p.name
+                    }));
+
+                    const selectedProject = await vscode.window.showQuickPick(projectItems, {
+                        placeHolder: 'Select JIRA project',
+                        canPickMany: false
+                    });
+
+                    // Check if user cancelled (pressed Escape)
+                    if (!selectedProject) {
+                        vscode.window.showInformationMessage('JIRA issue creation cancelled');
+                        return;
+                    }
+
+                    selectedProjectKey = selectedProject.label;
+                }
+
+                if (!selectedProjectKey) {
+                    vscode.window.showErrorMessage('No JIRA project selected');
+                    return;
+                }
+
+                progress.report({ increment: 50, message: 'Getting issue types...' });
+
+                // Get issue types for the selected project
+                const issueTypesResult = await this.jiraService.getIssueTypes(selectedProjectKey);
+                
+                if (issueTypesResult.success && issueTypesResult.issueTypes && issueTypesResult.issueTypes.length > 1) {
+                    // Sort so the default issue type is first
+                    let sortedIssueTypes = issueTypesResult.issueTypes;
+                    if (selectedIssueType) {
+                        sortedIssueTypes = [
+                            ...issueTypesResult.issueTypes.filter(it => it.name === selectedIssueType),
+                            ...issueTypesResult.issueTypes.filter(it => it.name !== selectedIssueType)
+                        ];
+                    }
+                    const issueTypeItems = sortedIssueTypes.map(it => ({
+                        label: it.name,
+                        description: it.description
+                    }));
+
+                    const selectedIssueTypeItem = await vscode.window.showQuickPick(issueTypeItems, {
+                        placeHolder: 'Select JIRA issue type',
+                        canPickMany: false
+                    });
+
+                    // Check if user cancelled (pressed Escape)
+                    if (!selectedIssueTypeItem) {
+                        vscode.window.showInformationMessage('JIRA issue creation cancelled');
+                        return;
+                    }
+
+                    selectedIssueType = selectedIssueTypeItem.label;
+                }
+
+                progress.report({ increment: 70, message: 'Creating JIRA issue...' });
+
+                // Create the JIRA issue
+                const result = await this.jiraService.createIssueFromTask(task, selectedProjectKey, selectedIssueType);
+
+                progress.report({ increment: 100, message: 'Done!' });
+
+                if (result.success) {
+                    const action = await vscode.window.showInformationMessage(
+                        `${result.message}`,
+                        'Open in JIRA',
+                        'Copy Link'
+                    );
+
+                    if (action === 'Open in JIRA' && result.url) {
+                        await vscode.env.openExternal(vscode.Uri.parse(result.url));
+                    } else if (action === 'Copy Link' && result.url) {
+                        await vscode.env.clipboard.writeText(result.url);
+                        vscode.window.showInformationMessage('JIRA issue URL copied to clipboard');
+                    }
+                } else {
+                    vscode.window.showErrorMessage(result.message);
+                }
+            });
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create JIRA issue: ${error}`);
+        }
+    }
+
+    /**
+     * Opens JIRA configuration guide
+     */
+    private async configureJira(): Promise<void> {
+        const result = await vscode.window.showInformationMessage(
+            'To configure JIRA integration, you need to set up the following settings:',
+            'Open Settings',
+            'Show Instructions'
+        );
+
+        if (result === 'Open Settings') {
+            await vscode.commands.executeCommand('workbench.action.openSettings', 'recurringTasks.jira');
+        } else if (result === 'Show Instructions') {
+            const instructions = `
+# JIRA Configuration Instructions
+
+1. **Base URL**: Your JIRA instance URL (e.g., https://yourcompany.atlassian.net)
+2. **Email**: Your JIRA account email address
+3. **API Token**: Create one at https://id.atlassian.com/manage-profile/security/api-tokens
+4. **Default Project Key**: The key of your default project (e.g., "PROJ")
+5. **Default Issue Type**: The default issue type (e.g., "Task", "Bug", "Story")
+
+You can set these in VS Code Settings (Ctrl+,) under "Recurring Tasks > Jira".
+            `;
+
+            const panel = vscode.window.createWebviewPanel(
+                'jiraConfig',
+                'JIRA Configuration Instructions',
+                vscode.ViewColumn.One,
+                { enableScripts: false }
+            );
+
+            panel.webview.html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: var(--vscode-font-family); padding: 20px; }
+                        h1 { color: var(--vscode-editor-foreground); }
+                        pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-radius: 4px; }
+                        a { color: var(--vscode-textLink-foreground); }
+                    </style>
+                </head>
+                <body>
+                    <pre>${instructions}</pre>
+                </body>
+                </html>
+            `;
+        }
+    }
+
+    /**
+     * Tests the JIRA connection
+     */
+    private async testJiraConnection(): Promise<void> {
+        try {
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Testing JIRA connection...',
+                cancellable: false
+            }, async (progress) => {
+                progress.report({ increment: 0, message: 'Initializing...' });
+
+                const initialized = await this.jiraService.initialize();
+                
+                if (!initialized) {
+                    vscode.window.showWarningMessage('JIRA is not configured. Please configure JIRA settings first.');
+                    return;
+                }
+
+                progress.report({ increment: 50, message: 'Connecting to JIRA...' });
+
+                const result = await this.jiraService.testConnection();
+                
+                progress.report({ increment: 100, message: 'Done!' });
+
+                if (result.success) {
+                    vscode.window.showInformationMessage(`✅ JIRA Connection Successful!\n${result.message}`);
+                } else {
+                    vscode.window.showErrorMessage(`❌ JIRA Connection Failed!\n${result.message}`);
+                }
+            });
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error testing JIRA connection: ${error}`);
         }
     }
 } 

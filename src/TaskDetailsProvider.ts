@@ -86,6 +86,9 @@ export class TaskDetailsProvider {
                     case 'validateTask':
                         TaskDetailsProvider.handleValidateTask(message.taskId, message.commentText);
                         return;
+                    case 'createJiraIssue':
+                        TaskDetailsProvider.handleCreateJiraIssue(message.taskId);
+                        return;
                 }
             },
             undefined,
@@ -320,6 +323,29 @@ export class TaskDetailsProvider {
         } else {
             vscode.window.showErrorMessage('Failed to validate task');
         }
+    }
+
+    /**
+     * Handles creating a JIRA issue from a task
+     */
+    private static handleCreateJiraIssue(taskId: string): void {
+        if (!TaskDetailsProvider.taskManager) {
+            vscode.window.showErrorMessage('Task manager not available');
+            return;
+        }
+
+        const task = TaskDetailsProvider.taskManager.getTask(taskId);
+        if (!task) {
+            vscode.window.showErrorMessage('Task not found');
+            return;
+        }
+
+        // Execute the JIRA command with the task
+        vscode.commands.executeCommand('recurringtasks.createJiraIssue', {
+            task: task,
+            label: task.title,
+            collapsibleState: vscode.TreeItemCollapsibleState.None
+        });
     }
 
     /**
@@ -1196,6 +1222,57 @@ export class TaskDetailsProvider {
             color: var(--vscode-descriptionForeground);
             margin-bottom: 15px;
         }
+
+        .jira-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border-radius: 4px;
+            border-left: 4px solid #0052CC;
+        }
+
+        .jira-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--vscode-editor-foreground);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .jira-description {
+            font-size: 0.9em;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 15px;
+        }
+
+        .jira-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .jira-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #0052CC;
+            color: white;
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .jira-btn:hover {
+            background-color: #0065FF;
+        }
+
+        .jira-btn:active {
+            background-color: #003D99;
+        }
     </style>
 </head>
 <body>
@@ -1346,6 +1423,22 @@ export class TaskDetailsProvider {
             <button class="add-comment-btn" onclick="validateTask()">
                 <span class="codicon codicon-check"></span>
                 Validate Task
+            </button>
+        </div>
+    </div>
+
+    <div class="jira-section">
+        <div class="jira-title">
+            <span class="codicon codicon-bug"></span>
+            JIRA Integration
+        </div>
+        <div class="jira-description">
+            Create a JIRA issue from this task with all the task details automatically populated.
+        </div>
+        <div class="jira-actions">
+            <button class="jira-btn" onclick="createJiraIssue()">
+                <span class="codicon codicon-bug"></span>
+                Create JIRA Issue
             </button>
         </div>
     </div>
@@ -1566,6 +1659,14 @@ export class TaskDetailsProvider {
                 validateTask();
             }
         });
+
+        // Create JIRA issue functionality
+        function createJiraIssue() {
+            vscode.postMessage({
+                command: 'createJiraIssue',
+                taskId: taskId
+            });
+        }
 
         // Filter functionality
         function filterComments(filter) {

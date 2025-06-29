@@ -15,6 +15,9 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 - **Calendar Meeting Creation**: Create calendar meetings from tasks with automatic pre-filling of details
 - **Multi-Calendar Support**: Choose between Outlook Web and Google Calendar for meeting creation
 - **Calendar Preferences**: Set your preferred calendar provider to avoid repeated prompts
+- **JIRA Integration**: Create JIRA issues directly from tasks with automatic population of task details
+- **JIRA Configuration**: Easy setup with your JIRA instance URL, email, and API token
+- **Project and Issue Type Selection**: Choose from available projects and issue types when creating JIRA issues
 - **Colored Icons**: Rich visual experience with colored icons throughout the interface
 - **Smart Time Display**: Shows time remaining in human-readable format (e.g., "Due in 3 days", "Overdue by 2 days")
 - **Visual Status Indicators**: Different icons for overdue, due soon, and normal tasks
@@ -110,6 +113,47 @@ To avoid the calendar selection prompt every time:
 - **Create Meeting**: `Ctrl+Shift+M` (when in the tasks view)
   - Creates a meeting for the first available task if no specific task is selected
 
+### Creating JIRA Issues
+
+You can create JIRA issues directly from your tasks with all task details automatically populated:
+
+1. **Click the JIRA icon** (🐛) next to the task in the sidebar, or
+2. **Open Task Details** and click "Create JIRA Issue" in the JIRA Integration section
+3. **Choose your project and issue type** (if you have multiple options)
+4. **The JIRA issue will be created** with:
+   - **Summary**: Task title
+   - **Description**: Task description plus recurring task details
+   - **Task metadata**: Periodicity, due date, and start date
+   - **Assignee**: Automatically assigned to you (if enabled)
+
+#### Setting Up JIRA Integration
+
+Before you can create JIRA issues, you need to configure your JIRA connection:
+
+1. **Method 1 - Command Palette**:
+
+   - Press `Ctrl+Shift+P`
+   - Type "Recurring Tasks: Configure JIRA"
+   - Follow the setup instructions
+
+2. **Method 2 - VS Code Settings**:
+
+   - Open Settings (`Ctrl+,`)
+   - Search for "Recurring Tasks JIRA"
+   - Configure the following settings:
+     - **Base URL**: Your JIRA instance URL (e.g., `https://yourcompany.atlassian.net`)
+     - **Email**: Your JIRA account email
+     - **API Token**: Create one at [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+     - **Default Project Key**: Your default project (e.g., "PROJ")
+     - **Default Issue Type**: Default issue type (e.g., "Task", "Bug", "Story")
+
+3. **Test Your Connection**:
+   - Use the command "Recurring Tasks: Test JIRA Connection" to verify your setup
+
+#### JIRA Keyboard Shortcut
+
+- **Create JIRA Issue**: `Ctrl+Shift+J` (when in the task details view)
+
 ### Deleting a Task
 
 1. Right-click on a task in the sidebar
@@ -148,6 +192,42 @@ This extension includes the following configuration options:
   - **Options**: "Outlook Web", "Google Calendar", "Ask each time"
   - **Default**: "Ask each time"
   - **Scope**: Global (applies to all workspaces)
+
+### JIRA Integration Settings
+
+- **`recurringTasks.jira.baseUrl`**: Your JIRA instance base URL
+
+  - **Example**: "https://yourcompany.atlassian.net"
+  - **Default**: ""
+  - **Scope**: Global
+
+- **`recurringTasks.jira.email`**: Your JIRA account email address
+
+  - **Default**: ""
+  - **Scope**: Global
+
+- **`recurringTasks.jira.apiToken`**: JIRA API token for authentication
+
+  - **Note**: Create one at [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+  - **Default**: ""
+  - **Scope**: Global
+
+- **`recurringTasks.jira.defaultProjectKey`**: Default JIRA project key for creating issues
+
+  - **Example**: "PROJ"
+  - **Default**: ""
+  - **Scope**: Global
+
+- **`recurringTasks.jira.defaultIssueType`**: Default JIRA issue type for creating issues
+
+  - **Options**: "Task", "Bug", "Story", etc. (depends on your JIRA configuration)
+  - **Default**: "Task"
+  - **Scope**: Global
+
+- **`recurringTasks.jira.autoAssignToMe`**: Automatically assign created JIRA issues to yourself
+  - **Options**: true/false
+  - **Default**: true
+  - **Scope**: Global
 
 ## Known Issues
 

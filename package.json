@@ -24,6 +24,44 @@
           ],
           "default": "Ask each time",
           "description": "Preferred calendar provider for creating meetings from tasks"
+        },
+        "recurringTasks.jira.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "JIRA instance base URL (e.g., https://yourcompany.atlassian.net)",
+          "format": "uri"
+        },
+        "recurringTasks.jira.email": {
+          "type": "string",
+          "default": "",
+          "description": "Your JIRA account email address"
+        },
+        "recurringTasks.jira.apiToken": {
+          "type": "string",
+          "default": "",
+          "description": "JIRA API token (create one at https://id.atlassian.com/manage-profile/security/api-tokens)"
+        },
+        "recurringTasks.jira.defaultProjectKey": {
+          "type": "string",
+          "default": "",
+          "description": "Default JIRA project key for creating issues"
+        },
+        "recurringTasks.jira.defaultIssueType": {
+          "type": "string",
+          "default": "Task",
+          "description": "Default JIRA issue type for creating issues"
+        },
+        "recurringTasks.jira.autoAssignToMe": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically assign created JIRA issues to yourself"
+        },
+        "recurringTasks.jira.maxProjectsToFetch": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Maximum number of projects to fetch from JIRA (for large instances)"
         }
       }
     },
@@ -90,6 +128,21 @@
         "command": "recurringtasks.setPreferredCalendar",
         "title": "Recurring Tasks: Set Preferred Calendar",
         "icon": "$(gear)"
+      },
+      {
+        "command": "recurringtasks.createJiraIssue",
+        "title": "Recurring Tasks: Create JIRA Issue",
+        "icon": "$(bug)"
+      },
+      {
+        "command": "recurringtasks.configureJira",
+        "title": "Recurring Tasks: Configure JIRA",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "recurringtasks.testJiraConnection",
+        "title": "Recurring Tasks: Test JIRA Connection",
+        "icon": "$(plug)"
       }
     ],
     "menus": {
@@ -130,6 +183,11 @@
           "command": "recurringtasks.createOutlookMeeting",
           "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
           "group": "inline"
+        },
+        {
+          "command": "recurringtasks.createJiraIssue",
+          "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
+          "group": "inline"
         }
       ]
     },
@@ -137,6 +195,11 @@
       {
         "command": "recurringtasks.createOutlookMeeting",
         "key": "ctrl+shift+m",
+        "when": "activeWebviewPanelId == 'recurringTasks.taskDetails'"
+      },
+      {
+        "command": "recurringtasks.createJiraIssue",
+        "key": "ctrl+shift+j",
         "when": "activeWebviewPanelId == 'recurringTasks.taskDetails'"
       }
     ]
