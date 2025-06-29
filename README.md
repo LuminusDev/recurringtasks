@@ -9,8 +9,10 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 - **Visual Task View**: See all your tasks in the VS Code sidebar with time remaining indicators
 - **Smart Task Sorting**: Tasks are automatically sorted by due date with overdue tasks at the top
 - **Task Details View**: Click on any task to view full details and comments in a webview panel
-- **Colored Icons**: Rich visual experience with colored icons throughout the interface
+- **Webview Task Creation**: Create new tasks using a modern webview form interface
+- **Inline Task Editing**: Edit task properties (title, description, periodicity) directly from the task details view
 - **Task Validation**: Mark tasks as complete with comments and automatically calculate next due date
+- **Colored Icons**: Rich visual experience with colored icons throughout the interface
 - **Smart Time Display**: Shows time remaining in human-readable format (e.g., "Due in 3 days", "Overdue by 2 days")
 - **Visual Status Indicators**: Different icons for overdue, due soon, and normal tasks
 - **Persistent Storage**: Tasks are saved and persist across VS Code sessions
@@ -36,9 +38,12 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 ### Adding a Task
 
 1. Click the "+" button in the "Recurring Tasks" view
-2. Enter the task title and description
-3. Specify the periodicity (e.g., every 7 days, every 2 weeks)
-4. Set the start date (defaults to today)
+2. Fill out the webview form with:
+   - Task title
+   - Description
+   - Periodicity (value and unit: days, weeks, months, years)
+   - Start date and time
+3. Click "Create Task" to save
 
 ### Validating a Task
 
@@ -46,6 +51,18 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 2. Select "Validate Task"
 3. Add an optional comment
 4. The task will be marked as complete and the next due date will be calculated automatically
+
+### Editing Tasks
+
+You can edit task properties directly from the task details view:
+
+1. **Open Task Details**: Click on any task in the sidebar to open the details view
+2. **Edit Title**: Click the edit icon next to the task title
+3. **Edit Description**: Click the edit icon next to the task description
+4. **Edit Periodicity**: Click the edit icon next to the periodicity value
+5. **Validate Task**: Use the "Validate Task" section at the bottom to mark the task as complete
+
+All changes are saved automatically and the task list will refresh to show the updates.
 
 ### Deleting a Task
 

@@ -23,9 +23,9 @@ export class Commands {
      * Registers all commands with VS Code
      */
     registerCommands(context: vscode.ExtensionContext): void {
-        // Add Task command
+        // Add Task command (webview only)
         const addTaskCommand = vscode.commands.registerCommand('recurringtasks.addTask', () => {
-            this.addTask();
+            this.createTaskWebview();
         });
 
         // Validate Task command
@@ -59,76 +59,13 @@ export class Commands {
     }
 
     /**
-     * Handles adding a new task
+     * Shows create task form in a webview
      */
-    private async addTask(): Promise<void> {
+    private createTaskWebview(): void {
         try {
-            // Get task title
-            const title = await vscode.window.showInputBox({
-                prompt: 'Enter task title',
-                placeHolder: 'e.g., Review weekly reports'
-            });
-
-            if (!title) {return;}
-
-            // Get task description
-            const description = await vscode.window.showInputBox({
-                prompt: 'Enter task description',
-                placeHolder: 'e.g., Review and approve weekly team reports'
-            });
-
-            if (!description) {return;}
-
-            // Get periodicity value
-            const periodicityValueStr = await vscode.window.showInputBox({
-                prompt: 'Enter periodicity value (number)',
-                placeHolder: 'e.g., 7'
-            });
-
-            if (!periodicityValueStr) {return;}
-
-            const periodicityValue = parseInt(periodicityValueStr);
-            if (isNaN(periodicityValue) || periodicityValue <= 0) {
-                vscode.window.showErrorMessage('Periodicity value must be a positive number');
-                return;
-            }
-
-            // Get periodicity unit
-            const periodicityUnit = await vscode.window.showQuickPick(['days', 'weeks', 'months', 'years'], {
-                placeHolder: 'Select periodicity unit'
-            });
-
-            if (!periodicityUnit) {return;}
-
-            const periodicity: Periodicity = {
-                value: periodicityValue,
-                unit: periodicityUnit as 'days' | 'weeks' | 'months' | 'years'
-            };
-
-            // Get start date
-            const startDateStr = await vscode.window.showInputBox({
-                prompt: 'Enter start date (YYYY-MM-DD)',
-                placeHolder: 'e.g., 2024-01-15',
-                value: new Date().toISOString().split('T')[0] // Default to today
-            });
-
-            if (!startDateStr) {return;}
-
-            const startDate = new Date(startDateStr);
-            if (isNaN(startDate.getTime())) {
-                vscode.window.showErrorMessage('Invalid date format. Please use YYYY-MM-DD');
-                return;
-            }
-
-            // Create the task
-            const newTask = this.taskManager.addTask(title, description, periodicity, startDate);
-            
-            // Refresh the view
-            this.refreshTasks();
-            
-            vscode.window.showInformationMessage(`Task "${title}" created successfully!`);
+            TaskDetailsProvider.showCreateTaskForm(this.extensionUri);
         } catch (error) {
-            vscode.window.showErrorMessage(`Failed to create task: ${error}`);
+            vscode.window.showErrorMessage(`Failed to show create task form: ${error}`);
         }
     }
 

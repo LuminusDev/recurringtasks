@@ -77,6 +77,65 @@ export class TaskDetailsProvider {
                     case 'openLink':
                         TaskDetailsProvider.handleOpenLink(message.url);
                         return;
+                    case 'createTask':
+                        TaskDetailsProvider.handleCreateTask(message.taskData);
+                        return;
+                    case 'updateTask':
+                        TaskDetailsProvider.handleUpdateTask(message.taskId, message.taskData);
+                        return;
+                    case 'validateTask':
+                        TaskDetailsProvider.handleValidateTask(message.taskId, message.commentText);
+                        return;
+                }
+            },
+            undefined,
+            undefined
+        );
+
+        // Clean up when the panel is disposed
+        panel.onDidDispose(() => {
+            TaskDetailsProvider.currentPanel = undefined;
+        }, null);
+    }
+
+    /**
+     * Shows create task form in a webview panel
+     */
+    public static showCreateTaskForm(extensionUri: vscode.Uri): void {
+        // If we have an existing panel, reuse it
+        if (TaskDetailsProvider.currentPanel) {
+            TaskDetailsProvider.currentPanel.reveal(vscode.ViewColumn.One);
+            TaskDetailsProvider.currentPanel.title = 'Create New Task';
+            TaskDetailsProvider.currentPanel.webview.html = TaskDetailsProvider.getCreateTaskWebviewContent(TaskDetailsProvider.currentPanel.webview, extensionUri);
+            return;
+        }
+
+        // Create a new panel if none exists
+        const panel = vscode.window.createWebviewPanel(
+            TaskDetailsProvider.viewType,
+            'Create New Task',
+            vscode.ViewColumn.One,
+            {
+                enableScripts: true,
+                retainContextWhenHidden: true
+            }
+        );
+
+        // Store reference to the panel
+        TaskDetailsProvider.currentPanel = panel;
+
+        panel.webview.html = TaskDetailsProvider.getCreateTaskWebviewContent(panel.webview, extensionUri);
+
+        // Handle messages from the webview
+        panel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'close':
+                        panel.dispose();
+                        return;
+                    case 'createTask':
+                        TaskDetailsProvider.handleCreateTask(message.taskData);
+                        return;
                 }
             },
             undefined,
@@ -166,6 +225,89 @@ export class TaskDetailsProvider {
             await vscode.env.openExternal(vscode.Uri.parse(url));
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to open link: ${error}`);
+        }
+    }
+
+    /**
+     * Handles creating a new task
+     */
+    private static handleCreateTask(taskData: any): void {
+        if (!TaskDetailsProvider.taskManager) {
+            vscode.window.showErrorMessage('Task manager not available');
+            return;
+        }
+
+        try {
+            const { title, description, periodicity, startDate } = taskData;
+            
+            if (!title || !description || !periodicity || !startDate) {
+                vscode.window.showErrorMessage('Missing required task data');
+                return;
+            }
+
+            const newTask = TaskDetailsProvider.taskManager.addTask(
+                title,
+                description,
+                periodicity,
+                new Date(startDate)
+            );
+
+            if (newTask) {
+                TaskDetailsProvider.refreshTaskProvider();
+                vscode.window.showInformationMessage(`Task "${title}" created successfully`);
+                
+                // Close the current panel if it's a create task panel
+                if (TaskDetailsProvider.currentPanel) {
+                    TaskDetailsProvider.currentPanel.dispose();
+                }
+            } else {
+                vscode.window.showErrorMessage('Failed to create task');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error creating task: ${error}`);
+        }
+    }
+
+    /**
+     * Handles updating an existing task
+     */
+    private static handleUpdateTask(taskId: string, taskData: any): void {
+        if (!TaskDetailsProvider.taskManager) {
+            vscode.window.showErrorMessage('Task manager not available');
+            return;
+        }
+
+        try {
+            const updatedTask = TaskDetailsProvider.taskManager.updateTask(taskId, taskData);
+            
+            if (updatedTask) {
+                TaskDetailsProvider.refreshPanel(updatedTask);
+                TaskDetailsProvider.refreshTaskProvider();
+                vscode.window.showInformationMessage('Task updated successfully');
+            } else {
+                vscode.window.showErrorMessage('Failed to update task');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error updating task: ${error}`);
+        }
+    }
+
+    /**
+     * Handles validating a task (completing it and setting next due date)
+     */
+    private static handleValidateTask(taskId: string, commentText: string): void {
+        if (!TaskDetailsProvider.taskManager) {
+            vscode.window.showErrorMessage('Task manager not available');
+            return;
+        }
+
+        const updatedTask = TaskDetailsProvider.taskManager.validateTask(taskId, commentText);
+        if (updatedTask) {
+            TaskDetailsProvider.refreshPanel(updatedTask);
+            TaskDetailsProvider.refreshTaskProvider();
+            vscode.window.showInformationMessage('Task validated successfully');
+        } else {
+            vscode.window.showErrorMessage('Failed to validate task');
         }
     }
 
@@ -283,7 +425,7 @@ export class TaskDetailsProvider {
         };
 
         const commentsHtml = task.comments.length > 0 
-            ? task.comments.map(comment => `
+            ? [...task.comments].reverse().map(comment => `
                 <div class="comment" data-comment-id="${comment.id}">
                     <div class="comment-header">
                         <span class="comment-date">${formatDate(comment.date)}</span>
@@ -816,15 +958,194 @@ export class TaskDetailsProvider {
         .clickable-link:hover {
             color: var(--vscode-textLink-activeForeground);
         }
+
+        .edit-btn {
+            background: none;
+            border: none;
+            color: var(--vscode-descriptionForeground);
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+
+        .edit-btn:hover {
+            background-color: var(--vscode-toolbar-hoverBackground);
+            color: var(--vscode-foreground);
+        }
+
+        .edit-form {
+            display: none;
+            margin-top: 10px;
+            padding: 15px;
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border-radius: 4px;
+        }
+
+        .edit-form.show {
+            display: block;
+        }
+
+        .edit-form-group {
+            margin-bottom: 15px;
+        }
+
+        .edit-form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--vscode-editor-foreground);
+        }
+
+        .edit-form-input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+        }
+
+        .edit-form-input:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .edit-form-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 6px 10px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            resize: vertical;
+        }
+
+        .edit-form-textarea:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .edit-form-select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+        }
+
+        .edit-form-select:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .edit-periodicity-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .edit-form-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .edit-btn-small {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 3px;
+            font-family: var(--vscode-font-family);
+            font-size: 0.9em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .edit-btn-primary {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .edit-btn-primary:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        .edit-btn-secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .edit-btn-secondary:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .validate-task-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border-radius: 4px;
+            border-left: 4px solid var(--vscode-textPreformat-foreground);
+        }
+
+        .validate-task-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--vscode-editor-foreground);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .validate-task-description {
+            font-size: 0.9em;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="task-header">
         <div class="task-title">
             <span class="task-icon ${getStatusClass()}">${getStatusClass() === 'overdue' ? '🔴' : getStatusClass() === 'due-soon' ? '🟡' : '✅'}</span>
-            ${task.title}
+            <span id="task-title-display">${task.title}</span>
+            <button class="edit-btn codicon codicon-edit" onclick="editTaskTitle()" title="Edit task title"></button>
         </div>
-        <div class="task-description">${convertUrlsToLinks(task.description)}</div>
+        <div class="edit-form" id="title-edit-form">
+            <div class="edit-form-group">
+                <label class="edit-form-label">Task Title</label>
+                <input type="text" id="title-edit-input" class="edit-form-input" value="${task.title}">
+            </div>
+            <div class="edit-form-actions">
+                <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">Cancel</button>
+                <button class="edit-btn-small edit-btn-primary" onclick="saveTaskTitle()">Save</button>
+            </div>
+        </div>
+        
+        <div class="task-description">
+            <span id="task-description-display">${convertUrlsToLinks(task.description)}</span>
+            <button class="edit-btn codicon codicon-edit" onclick="editTaskDescription()" title="Edit task description"></button>
+        </div>
+        <div class="edit-form" id="description-edit-form">
+            <div class="edit-form-group">
+                <label class="edit-form-label">Task Description</label>
+                <textarea id="description-edit-textarea" class="edit-form-textarea">${task.description}</textarea>
+            </div>
+            <div class="edit-form-actions">
+                <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">Cancel</button>
+                <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDescription()">Save</button>
+            </div>
+        </div>
     </div>
 
     <div class="visual-section">
@@ -866,6 +1187,7 @@ export class TaskDetailsProvider {
                     <span class="periodicity-value">${task.periodicity.value}</span>
                     <span class="periodicity-unit">${task.periodicity.unit}</span>
                 </span>
+                <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
             </div>
         </div>
         
@@ -891,6 +1213,42 @@ export class TaskDetailsProvider {
                 <span class="comments-icon">💬</span>
                 ${task.comments.length} comment${task.comments.length !== 1 ? 's' : ''}
             </div>
+        </div>
+    </div>
+
+    <div class="edit-form" id="periodicity-edit-form">
+        <div class="edit-form-group">
+            <label class="edit-form-label">Periodicity</label>
+            <div class="edit-periodicity-group">
+                <input type="number" id="periodicity-edit-value" class="edit-form-input" value="${task.periodicity.value}" min="1">
+                <select id="periodicity-edit-unit" class="edit-form-select">
+                    <option value="days" ${task.periodicity.unit === 'days' ? 'selected' : ''}>Days</option>
+                    <option value="weeks" ${task.periodicity.unit === 'weeks' ? 'selected' : ''}>Weeks</option>
+                    <option value="months" ${task.periodicity.unit === 'months' ? 'selected' : ''}>Months</option>
+                    <option value="years" ${task.periodicity.unit === 'years' ? 'selected' : ''}>Years</option>
+                </select>
+            </div>
+        </div>
+        <div class="edit-form-actions">
+            <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditPeriodicity()">Cancel</button>
+            <button class="edit-btn-small edit-btn-primary" onclick="saveTaskPeriodicity()">Save</button>
+        </div>
+    </div>
+
+    <div class="validate-task-section">
+        <div class="validate-task-title">
+            <span class="codicon codicon-check"></span>
+            Validate Task
+        </div>
+        <div class="validate-task-description">
+            Mark this task as complete and set the next due date based on the periodicity.
+        </div>
+        <div class="add-comment-section">
+            <textarea class="add-comment-textarea" id="validate-comment-textarea" placeholder="Add a validation comment (optional)..."></textarea>
+            <button class="add-comment-btn" onclick="validateTask()">
+                <span class="codicon codicon-check"></span>
+                Validate Task
+            </button>
         </div>
     </div>
 
@@ -1003,6 +1361,425 @@ export class TaskDetailsProvider {
                     command: 'openLink',
                     url: url
                 });
+            }
+        });
+
+        // Edit task title functionality
+        function editTaskTitle() {
+            document.getElementById('title-edit-form').classList.add('show');
+            document.getElementById('title-edit-input').focus();
+        }
+
+        function cancelEditTitle() {
+            document.getElementById('title-edit-form').classList.remove('show');
+            document.getElementById('title-edit-input').value = '${task.title}';
+        }
+
+        function saveTaskTitle() {
+            const newTitle = document.getElementById('title-edit-input').value.trim();
+            if (newTitle) {
+                vscode.postMessage({
+                    command: 'updateTask',
+                    taskId: taskId,
+                    taskData: { title: newTitle }
+                });
+                document.getElementById('title-edit-form').classList.remove('show');
+            }
+        }
+
+        // Edit task description functionality
+        function editTaskDescription() {
+            document.getElementById('description-edit-form').classList.add('show');
+            document.getElementById('description-edit-textarea').focus();
+        }
+
+        function cancelEditDescription() {
+            document.getElementById('description-edit-form').classList.remove('show');
+            document.getElementById('description-edit-textarea').value = '${task.description}';
+        }
+
+        function saveTaskDescription() {
+            const newDescription = document.getElementById('description-edit-textarea').value.trim();
+            if (newDescription) {
+                vscode.postMessage({
+                    command: 'updateTask',
+                    taskId: taskId,
+                    taskData: { description: newDescription }
+                });
+                document.getElementById('description-edit-form').classList.remove('show');
+            }
+        }
+
+        // Edit task periodicity functionality
+        function editTaskPeriodicity() {
+            document.getElementById('periodicity-edit-form').classList.add('show');
+        }
+
+        function cancelEditPeriodicity() {
+            document.getElementById('periodicity-edit-form').classList.remove('show');
+            document.getElementById('periodicity-edit-value').value = '${task.periodicity.value}';
+            document.getElementById('periodicity-edit-unit').value = '${task.periodicity.unit}';
+        }
+
+        function saveTaskPeriodicity() {
+            const newValue = parseInt(document.getElementById('periodicity-edit-value').value);
+            const newUnit = document.getElementById('periodicity-edit-unit').value;
+            
+            if (newValue && newUnit) {
+                vscode.postMessage({
+                    command: 'updateTask',
+                    taskId: taskId,
+                    taskData: { 
+                        periodicity: {
+                            value: newValue,
+                            unit: newUnit
+                        }
+                    }
+                });
+                document.getElementById('periodicity-edit-form').classList.remove('show');
+            }
+        }
+
+        // Validate task functionality
+        function validateTask() {
+            const commentText = document.getElementById('validate-comment-textarea').value.trim();
+            vscode.postMessage({
+                command: 'validateTask',
+                taskId: taskId,
+                commentText: commentText || 'Task validated'
+            });
+            document.getElementById('validate-comment-textarea').value = '';
+        }
+
+        // Handle Enter key in validate comment textarea
+        document.getElementById('validate-comment-textarea').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                validateTask();
+            }
+        });
+    </script>
+</body>
+</html>`;
+    }
+
+    /**
+     * Generates the HTML content for the create task webview
+     */
+    private static getCreateTaskWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Task</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            box-sizing: border-box;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .form-header {
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--vscode-editor-foreground);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--vscode-editor-foreground);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .form-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 8px 12px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            resize: vertical;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .periodicity-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--vscode-panel-border);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+
+        .btn-secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .error-message {
+            color: var(--vscode-errorForeground);
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .required {
+            color: var(--vscode-errorForeground);
+        }
+    </style>
+</head>
+<body>
+    <div class="form-header">
+        <div class="form-title">
+            <span class="codicon codicon-add"></span>
+            Create New Recurring Task
+        </div>
+    </div>
+
+    <form id="create-task-form">
+        <div class="form-group">
+            <label class="form-label" for="task-title">
+                Task Title <span class="required">*</span>
+            </label>
+            <input type="text" id="task-title" class="form-input" required placeholder="Enter task title">
+            <div class="error-message" id="title-error">Please enter a task title</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="task-description">
+                Description <span class="required">*</span>
+            </label>
+            <textarea id="task-description" class="form-textarea" required placeholder="Enter task description"></textarea>
+            <div class="error-message" id="description-error">Please enter a task description</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Periodicity <span class="required">*</span></label>
+            <div class="periodicity-group">
+                <input type="number" id="periodicity-value" class="form-input" min="1" required placeholder="Value">
+                <select id="periodicity-unit" class="form-select" required>
+                    <option value="">Unit</option>
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months">Months</option>
+                    <option value="years">Years</option>
+                </select>
+            </div>
+            <div class="error-message" id="periodicity-error">Please enter valid periodicity</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="start-date">
+                Start Date <span class="required">*</span>
+            </label>
+            <input type="datetime-local" id="start-date" class="form-input" required>
+            <div class="error-message" id="start-date-error">Please select a start date</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="cancelCreate()">
+                <span class="codicon codicon-close"></span>
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <span class="codicon codicon-check"></span>
+                Create Task
+            </button>
+        </div>
+    </form>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+        
+        // Set default start date to now
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('start-date').value = localDateTime;
+        
+        // Form submission
+        document.getElementById('create-task-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            createTask();
+        });
+        
+        function createTask() {
+            const title = document.getElementById('task-title').value.trim();
+            const description = document.getElementById('task-description').value.trim();
+            const periodicityValue = parseInt(document.getElementById('periodicity-value').value);
+            const periodicityUnit = document.getElementById('periodicity-unit').value;
+            const startDate = document.getElementById('start-date').value;
+            
+            // Validation
+            let isValid = true;
+            
+            if (!title) {
+                showError('title-error', 'Please enter a task title');
+                isValid = false;
+            } else {
+                hideError('title-error');
+            }
+            
+            if (!description) {
+                showError('description-error', 'Please enter a task description');
+                isValid = false;
+            } else {
+                hideError('description-error');
+            }
+            
+            if (!periodicityValue || !periodicityUnit) {
+                showError('periodicity-error', 'Please enter valid periodicity');
+                isValid = false;
+            } else {
+                hideError('periodicity-error');
+            }
+            
+            if (!startDate) {
+                showError('start-date-error', 'Please select a start date');
+                isValid = false;
+            } else {
+                hideError('start-date-error');
+            }
+            
+            if (!isValid) {
+                return;
+            }
+            
+            const taskData = {
+                title: title,
+                description: description,
+                periodicity: {
+                    value: periodicityValue,
+                    unit: periodicityUnit
+                },
+                startDate: new Date(startDate).toISOString()
+            };
+            
+            vscode.postMessage({
+                command: 'createTask',
+                taskData: taskData
+            });
+        }
+        
+        function cancelCreate() {
+            vscode.postMessage({
+                command: 'close'
+            });
+        }
+        
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.style.display = 'none';
+        }
+        
+        // Handle Enter key in inputs
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                createTask();
             }
         });
     </script>
