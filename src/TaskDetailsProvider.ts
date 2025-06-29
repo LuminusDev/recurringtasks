@@ -278,7 +278,18 @@ export class TaskDetailsProvider {
         }
 
         try {
-            const updatedTask = TaskDetailsProvider.taskManager.updateTask(taskId, taskData);
+            // Convert date strings back to Date objects if they exist
+            const processedTaskData = { ...taskData };
+            
+            if (processedTaskData.dueDate && typeof processedTaskData.dueDate === 'string') {
+                processedTaskData.dueDate = new Date(processedTaskData.dueDate);
+            }
+            
+            if (processedTaskData.startDate && typeof processedTaskData.startDate === 'string') {
+                processedTaskData.startDate = new Date(processedTaskData.startDate);
+            }
+
+            const updatedTask = TaskDetailsProvider.taskManager.updateTask(taskId, processedTaskData);
             
             if (updatedTask) {
                 TaskDetailsProvider.refreshPanel(updatedTask);
@@ -559,6 +570,47 @@ export class TaskDetailsProvider {
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        .comments-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85em;
+        }
+
+        .filter-toggle {
+            display: flex;
+            background-color: var(--vscode-editor-inactiveSelectionBackground);
+            border-radius: 4px;
+            padding: 1px;
+            border: 1px solid var(--vscode-panel-border);
+        }
+
+        .filter-option {
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .filter-option.active {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .filter-option:hover:not(.active) {
+            background-color: var(--vscode-toolbar-hoverBackground);
+            color: var(--vscode-foreground);
+        }
+
+        .comment.hidden {
+            display: none;
         }
 
         .add-comment-section {
@@ -1014,6 +1066,10 @@ export class TaskDetailsProvider {
             display: block;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         .edit-form-group {
             margin-bottom: 15px;
         }
@@ -1212,10 +1268,12 @@ export class TaskDetailsProvider {
             <div class="meta-value">
                 <span class="periodicity">
                     <span class="periodicity-icon">🔄</span>
-                    <span class="periodicity-value">${task.periodicity.value}</span>
-                    <span class="periodicity-unit">${task.periodicity.unit}</span>
+                    <span id="periodicity-display">
+                        <span class="periodicity-value">${task.periodicity.value}</span>
+                        <span class="periodicity-unit">${task.periodicity.unit}</span>
+                    </span>
+                    <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
                 </span>
-                <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
             </div>
         </div>
         
@@ -1231,7 +1289,8 @@ export class TaskDetailsProvider {
             <div class="meta-label">Next Due Date</div>
             <div class="meta-value">
                 <span class="date-icon">⏰</span>
-                ${formatDate(task.dueDate)}
+                <span id="due-date-display">${formatDate(task.dueDate)}</span>
+                <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="Edit due date"></button>
             </div>
         </div>
         
@@ -1263,6 +1322,17 @@ export class TaskDetailsProvider {
         </div>
     </div>
 
+    <div class="edit-form" id="due-date-edit-form">
+        <div class="edit-form-group">
+            <label class="edit-form-label">Next Due Date</label>
+            <input type="datetime-local" id="due-date-edit-input" class="edit-form-input" value="${task.dueDate.toISOString().slice(0, 16)}">
+        </div>
+        <div class="edit-form-actions">
+            <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDueDate()">Cancel</button>
+            <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDueDate()">Save</button>
+        </div>
+    </div>
+
     <div class="validate-task-section">
         <div class="validate-task-title">
             <span class="codicon codicon-check"></span>
@@ -1284,6 +1354,17 @@ export class TaskDetailsProvider {
         <div class="comments-header">
             <span class="comments-icon">💬</span>
             Comments (${task.comments.length})
+        </div>
+        
+        <div class="comments-filter">
+            <span style="color: var(--vscode-descriptionForeground);">Filter:</span>
+            <div class="filter-toggle">
+                <button class="filter-option active" id="filter-all" onclick="filterComments('all')">All</button>
+                <button class="filter-option" id="filter-validation" onclick="filterComments('validation')">Validation (${task.comments.filter(c => c.isValidation).length})</button>
+            </div>
+            <span style="color: var(--vscode-descriptionForeground); margin-left: auto;" id="comment-counter">
+                ${task.comments.length} comments
+            </span>
         </div>
         
         <div class="add-comment-section">
@@ -1485,6 +1566,60 @@ export class TaskDetailsProvider {
                 validateTask();
             }
         });
+
+        // Filter functionality
+        function filterComments(filter) {
+            const comments = document.querySelectorAll('.comment');
+            const allBtn = document.getElementById('filter-all');
+            const validationBtn = document.getElementById('filter-validation');
+            
+            // Update button states
+            if (filter === 'all') {
+                allBtn.classList.add('active');
+                validationBtn.classList.remove('active');
+            } else {
+                allBtn.classList.remove('active');
+                validationBtn.classList.add('active');
+            }
+            
+            // Filter comments
+            comments.forEach(comment => {
+                if (filter === 'all' || (filter === 'validation' && comment.classList.contains('validation-comment'))) {
+                    comment.classList.remove('hidden');
+                } else {
+                    comment.classList.add('hidden');
+                }
+            });
+
+            // Update comment counter
+            const commentCounter = document.getElementById('comment-counter');
+            const visibleComments = document.querySelectorAll('.comment:not(.hidden)');
+            commentCounter.textContent = visibleComments.length + ' comments';
+        }
+
+        // Edit task due date functionality
+        function editTaskDueDate() {
+            document.getElementById('due-date-edit-form').classList.add('show');
+            document.getElementById('due-date-edit-input').focus();
+        }
+
+        function cancelEditDueDate() {
+            document.getElementById('due-date-edit-form').classList.remove('show');
+            // Reset to original value
+            document.getElementById('due-date-edit-input').value = '${task.dueDate.toISOString().slice(0, 16)}';
+        }
+
+        function saveTaskDueDate() {
+            const newDueDate = document.getElementById('due-date-edit-input').value;
+            if (newDueDate) {
+                vscode.postMessage({
+                    command: 'updateTask',
+                    taskId: taskId,
+                    taskData: { dueDate: new Date(newDueDate).toISOString() }
+                });
+                document.getElementById('due-date-edit-form').classList.remove('show');
+            }
+        }
     </script>
 </body>
 </html>`;
