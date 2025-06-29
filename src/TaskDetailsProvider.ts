@@ -780,7 +780,7 @@ export class TaskDetailsProvider {
         }
 
         .status-icon.normal {
-            color: var(--vscode-textPreformat-foreground);
+            color: var(--vscode-testing-iconPassed);
         }
 
         .status-header {
@@ -802,11 +802,11 @@ export class TaskDetailsProvider {
         }
 
         .task-icon.normal {
-            color: var(--vscode-textPreformat-foreground);
+            color: var(--vscode-testing-iconPassed);
         }
 
         .periodicity-icon {
-            color: var(--vscode-textPreformat-foreground);
+            color: var(--vscode-symbolIcon-propertyForeground);
             margin-right: 5px;
         }
 
@@ -816,7 +816,7 @@ export class TaskDetailsProvider {
         }
 
         .comments-icon {
-            color: var(--vscode-textPreformat-foreground);
+            color: var(--vscode-symbolIcon-methodForeground);
             margin-right: 8px;
         }
 
@@ -852,7 +852,7 @@ export class TaskDetailsProvider {
         }
 
         .progress-fill.normal {
-            background: linear-gradient(90deg, var(--vscode-textPreformat-foreground) 0%, #6bcf7f 100%);
+            background: linear-gradient(90deg, var(--vscode-testing-iconPassed) 0%, #6bcf7f 100%);
         }
 
         .time-visual {
@@ -889,9 +889,9 @@ export class TaskDetailsProvider {
         }
 
         .time-circle.normal {
-            background: var(--vscode-textPreformat-foreground);
+            background: var(--vscode-testing-iconPassed);
             color: white;
-            border-color: var(--vscode-textPreformat-foreground);
+            border-color: var(--vscode-testing-iconPassed);
         }
 
         .time-circle::before {
@@ -1123,7 +1123,7 @@ export class TaskDetailsProvider {
             padding: 15px;
             background-color: var(--vscode-editor-inactiveSelectionBackground);
             border-radius: 4px;
-            border-left: 4px solid var(--vscode-textPreformat-foreground);
+            border-left: 4px solid var(--vscode-testing-iconPassed);
         }
 
         .validate-task-title {
