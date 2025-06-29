@@ -89,6 +89,9 @@ export class TaskDetailsProvider {
                     case 'createJiraIssue':
                         TaskDetailsProvider.handleCreateJiraIssue(message.taskId);
                         return;
+                    case 'createMeeting':
+                        TaskDetailsProvider.handleCreateMeeting(message.taskId);
+                        return;
                 }
             },
             undefined,
@@ -349,6 +352,29 @@ export class TaskDetailsProvider {
     }
 
     /**
+     * Handles creating a meeting from a task
+     */
+    private static handleCreateMeeting(taskId: string): void {
+        if (!TaskDetailsProvider.taskManager) {
+            vscode.window.showErrorMessage('Task manager not available');
+            return;
+        }
+
+        const task = TaskDetailsProvider.taskManager.getTask(taskId);
+        if (!task) {
+            vscode.window.showErrorMessage('Task not found');
+            return;
+        }
+
+        // Execute the meeting command with the task
+        vscode.commands.executeCommand('recurringtasks.createOutlookMeeting', {
+            task: task,
+            label: task.title,
+            collapsibleState: vscode.TreeItemCollapsibleState.None
+        });
+    }
+
+    /**
      * Refreshes the panel with updated task data
      */
     private static refreshPanel(task: Task): void {
@@ -521,6 +547,25 @@ export class TaskDetailsProvider {
             border-bottom: 1px solid var(--vscode-panel-border);
             padding-bottom: 15px;
             margin-bottom: 20px;
+            position: relative;
+        }
+
+        .task-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .task-header-main {
+            flex: 1;
+        }
+
+        .task-header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            padding-top: 5px;
         }
 
         .task-title {
@@ -1223,88 +1268,98 @@ export class TaskDetailsProvider {
             margin-bottom: 15px;
         }
 
-        .jira-section {
-            margin: 20px 0;
+        .add-comment-section {
+            margin-bottom: 20px;
             padding: 15px;
             background-color: var(--vscode-editor-inactiveSelectionBackground);
-            border-radius: 4px;
-            border-left: 4px solid #0052CC;
+            border-radius: 6px;
+            box-sizing: border-box;
         }
 
-        .jira-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--vscode-editor-foreground);
+        .validate-actions {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
         }
 
-        .jira-description {
-            font-size: 0.9em;
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: 15px;
-        }
-
-        .jira-actions {
+        .secondary-actions {
             display: flex;
             gap: 10px;
         }
 
-        .jira-btn {
-            padding: 8px 16px;
+        .secondary-btn {
+            padding: 6px 8px;
             border: none;
             border-radius: 4px;
-            background-color: #0052CC;
-            color: white;
-            font-family: var(--vscode-font-family);
-            font-size: var(--vscode-font-size);
+            background-color: var(--vscode-toolbar-hoverBackground);
+            color: var(--vscode-descriptionForeground);
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
-            transition: background-color 0.2s;
+            justify-content: center;
+            transition: all 0.2s ease;
+            min-width: 32px;
+            height: 32px;
         }
 
-        .jira-btn:hover {
-            background-color: #0065FF;
+        .secondary-btn:hover {
+            background-color: var(--vscode-toolbar-activeBackground);
+            color: var(--vscode-foreground);
         }
 
-        .jira-btn:active {
-            background-color: #003D99;
+        .jira-secondary-btn:hover {
+            background-color: #ff6b6b;
+            color: white;
+        }
+
+        .meeting-secondary-btn:hover {
+            background-color: #4ecdc4;
+            color: white;
         }
     </style>
 </head>
 <body>
     <div class="task-header">
-        <div class="task-title">
-            <span class="task-icon ${getStatusClass()}">${getStatusClass() === 'overdue' ? '🔴' : getStatusClass() === 'due-soon' ? '🟡' : '✅'}</span>
-            <span id="task-title-display">${task.title}</span>
-            <button class="edit-btn codicon codicon-edit" onclick="editTaskTitle()" title="Edit task title"></button>
-        </div>
-        <div class="edit-form" id="title-edit-form">
-            <div class="edit-form-group">
-                <label class="edit-form-label">Task Title</label>
-                <input type="text" id="title-edit-input" class="edit-form-input" value="${task.title}">
+        <div class="task-header-content">
+            <div class="task-header-main">
+                <div class="task-title">
+                    <span class="task-icon ${getStatusClass()}">${getStatusClass() === 'overdue' ? '🔴' : getStatusClass() === 'due-soon' ? '🟡' : '✅'}</span>
+                    <span id="task-title-display">${task.title}</span>
+                    <button class="edit-btn codicon codicon-edit" onclick="editTaskTitle()" title="Edit task title"></button>
+                </div>
+                <div class="edit-form" id="title-edit-form">
+                    <div class="edit-form-group">
+                        <label class="edit-form-label">Task Title</label>
+                        <input type="text" id="title-edit-input" class="edit-form-input" value="${task.title}">
+                    </div>
+                    <div class="edit-form-actions">
+                        <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">Cancel</button>
+                        <button class="edit-btn-small edit-btn-primary" onclick="saveTaskTitle()">Save</button>
+                    </div>
+                </div>
+                
+                <div class="task-description">
+                    <span id="task-description-display">${convertUrlsToLinks(task.description)}</span>
+                    <button class="edit-btn codicon codicon-edit" onclick="editTaskDescription()" title="Edit task description"></button>
+                </div>
+                <div class="edit-form" id="description-edit-form">
+                    <div class="edit-form-group">
+                        <label class="edit-form-label">Task Description</label>
+                        <textarea id="description-edit-textarea" class="edit-form-textarea">${task.description}</textarea>
+                    </div>
+                    <div class="edit-form-actions">
+                        <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">Cancel</button>
+                        <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDescription()">Save</button>
+                    </div>
+                </div>
             </div>
-            <div class="edit-form-actions">
-                <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">Cancel</button>
-                <button class="edit-btn-small edit-btn-primary" onclick="saveTaskTitle()">Save</button>
-            </div>
-        </div>
-        
-        <div class="task-description">
-            <span id="task-description-display">${convertUrlsToLinks(task.description)}</span>
-            <button class="edit-btn codicon codicon-edit" onclick="editTaskDescription()" title="Edit task description"></button>
-        </div>
-        <div class="edit-form" id="description-edit-form">
-            <div class="edit-form-group">
-                <label class="edit-form-label">Task Description</label>
-                <textarea id="description-edit-textarea" class="edit-form-textarea">${task.description}</textarea>
-            </div>
-            <div class="edit-form-actions">
-                <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">Cancel</button>
-                <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDescription()">Save</button>
+            <div class="task-header-actions">
+                <button class="secondary-btn jira-secondary-btn" onclick="createJiraIssue()" title="Create JIRA Issue">
+                    <span class="codicon codicon-bug"></span>
+                </button>
+                <button class="secondary-btn meeting-secondary-btn" onclick="createMeeting()" title="Create Calendar Meeting">
+                    <span class="codicon codicon-calendar"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -1423,22 +1478,6 @@ export class TaskDetailsProvider {
             <button class="add-comment-btn" onclick="validateTask()">
                 <span class="codicon codicon-check"></span>
                 Validate Task
-            </button>
-        </div>
-    </div>
-
-    <div class="jira-section">
-        <div class="jira-title">
-            <span class="codicon codicon-bug"></span>
-            JIRA Integration
-        </div>
-        <div class="jira-description">
-            Create a JIRA issue from this task with all the task details automatically populated.
-        </div>
-        <div class="jira-actions">
-            <button class="jira-btn" onclick="createJiraIssue()">
-                <span class="codicon codicon-bug"></span>
-                Create JIRA Issue
             </button>
         </div>
     </div>
@@ -1720,6 +1759,14 @@ export class TaskDetailsProvider {
                 });
                 document.getElementById('due-date-edit-form').classList.remove('show');
             }
+        }
+
+        // Create meeting functionality
+        function createMeeting() {
+            vscode.postMessage({
+                command: 'createMeeting',
+                taskId: taskId
+            });
         }
     </script>
 </body>
