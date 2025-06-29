@@ -12,6 +12,21 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Recurring Tasks",
+      "properties": {
+        "recurringTasks.preferredCalendar": {
+          "type": "string",
+          "enum": [
+            "Outlook Web",
+            "Google Calendar",
+            "Ask each time"
+          ],
+          "default": "Ask each time",
+          "description": "Preferred calendar provider for creating meetings from tasks"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -65,6 +80,16 @@
       {
         "command": "recurringtasks.showTaskDetails",
         "title": "Recurring Tasks: Show Task Details"
+      },
+      {
+        "command": "recurringtasks.createOutlookMeeting",
+        "title": "Recurring Tasks: Create Calendar Meeting",
+        "icon": "$(calendar)"
+      },
+      {
+        "command": "recurringtasks.setPreferredCalendar",
+        "title": "Recurring Tasks: Set Preferred Calendar",
+        "icon": "$(gear)"
       }
     ],
     "menus": {
@@ -100,9 +125,21 @@
           "command": "recurringtasks.unarchiveTask",
           "when": "view == recurringTasks.view && viewItem == 'archived' && viewItem != 'category'",
           "group": "inline"
+        },
+        {
+          "command": "recurringtasks.createOutlookMeeting",
+          "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
+          "group": "inline"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "recurringtasks.createOutlookMeeting",
+        "key": "ctrl+shift+m",
+        "when": "activeWebviewPanelId == 'recurringTasks.taskDetails'"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",

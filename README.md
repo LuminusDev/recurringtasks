@@ -12,6 +12,9 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 - **Webview Task Creation**: Create new tasks using a modern webview form interface
 - **Inline Task Editing**: Edit task properties (title, description, periodicity) directly from the task details view
 - **Task Validation**: Mark tasks as complete with comments and automatically calculate next due date
+- **Calendar Meeting Creation**: Create calendar meetings from tasks with automatic pre-filling of details
+- **Multi-Calendar Support**: Choose between Outlook Web and Google Calendar for meeting creation
+- **Calendar Preferences**: Set your preferred calendar provider to avoid repeated prompts
 - **Colored Icons**: Rich visual experience with colored icons throughout the interface
 - **Smart Time Display**: Shows time remaining in human-readable format (e.g., "Due in 3 days", "Overdue by 2 days")
 - **Visual Status Indicators**: Different icons for overdue, due soon, and normal tasks
@@ -64,6 +67,49 @@ You can edit task properties directly from the task details view:
 
 All changes are saved automatically and the task list will refresh to show the updates.
 
+### Creating Calendar Meetings
+
+You can create calendar meetings directly from your tasks with pre-filled details:
+
+1. **Click the calendar icon** (📅) next to the task
+2. **Choose your calendar provider** (if not set as default):
+   - **Outlook Web**: Opens in browser with task details pre-filled
+   - **Google Calendar**: Opens Google Calendar with task details pre-filled
+3. **Meeting details are automatically populated**:
+   - **Subject**: Task title
+   - **Description**: Task description
+   - **Date/Time**: Task due date
+   - **Duration**: 1 hour (Google Calendar)
+
+#### Setting Your Preferred Calendar
+
+To avoid the calendar selection prompt every time:
+
+1. **Method 1 - Command Palette**:
+
+   - Press `Ctrl+Shift+P`
+   - Type "Recurring Tasks: Set Preferred Calendar"
+   - Choose your preferred calendar provider
+
+2. **Method 2 - VS Code Settings**:
+
+   - Open Settings (`Ctrl+,`)
+   - Search for "Recurring Tasks"
+   - Find "Preferred Calendar" setting
+   - Choose: "Outlook Web", "Google Calendar", or "Ask each time"
+
+3. **Method 3 - Settings.json**:
+   ```json
+   {
+     "recurringTasks.preferredCalendar": "Google Calendar"
+   }
+   ```
+
+#### Keyboard Shortcut
+
+- **Create Meeting**: `Ctrl+Shift+M` (when in the tasks view)
+  - Creates a meeting for the first available task if no specific task is selected
+
 ### Deleting a Task
 
 1. Right-click on a task in the sidebar
@@ -94,7 +140,14 @@ All changes are saved automatically and the task list will refresh to show the u
 
 ## Extension Settings
 
-This extension does not currently add any VS Code settings.
+This extension includes the following configuration options:
+
+### Calendar Meeting Settings
+
+- **`recurringTasks.preferredCalendar`**: Set your preferred calendar provider for meeting creation
+  - **Options**: "Outlook Web", "Google Calendar", "Ask each time"
+  - **Default**: "Ask each time"
+  - **Scope**: Global (applies to all workspaces)
 
 ## Known Issues
 

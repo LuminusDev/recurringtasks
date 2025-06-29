@@ -58,6 +58,26 @@ export class Commands {
             this.showTaskDetails(task);
         });
 
+        // Create Outlook Meeting command
+        const createMeetingCommand = vscode.commands.registerCommand('recurringtasks.createOutlookMeeting', async (item?: TaskTreeItem) => {
+            // If no item provided (e.g., called via keybinding), try to get selected task
+            if (!item) {
+                const selectedTask = await this.getSelectedTask();
+                if (selectedTask) {
+                    this.createOutlookMeeting(selectedTask);
+                } else {
+                    vscode.window.showWarningMessage('Please select a task first to create a calendar meeting.');
+                }
+            } else {
+                this.createOutlookMeeting(item);
+            }
+        });
+
+        // Set Preferred Calendar command
+        const setPreferredCalendarCommand = vscode.commands.registerCommand('recurringtasks.setPreferredCalendar', () => {
+            this.setPreferredCalendar();
+        });
+
         // Add all commands to subscriptions
         context.subscriptions.push(
             addTaskCommand,
@@ -66,7 +86,9 @@ export class Commands {
             unarchiveTaskCommand,
             deleteTaskCommand,
             refreshTasksCommand,
-            showTaskDetailsCommand
+            showTaskDetailsCommand,
+            createMeetingCommand,
+            setPreferredCalendarCommand
         );
     }
 
@@ -188,6 +210,123 @@ export class Commands {
             TaskDetailsProvider.showTaskDetails(task, this.extensionUri);
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to show task details: ${error}`);
+        }
+    }
+
+    /**
+     * Creates a calendar meeting from a task using web-based calendars
+     */
+    private async createOutlookMeeting(item: TaskTreeItem): Promise<void> {
+        try {
+            const task = item.task;
+            const subject = encodeURIComponent(task.title);
+            const body = encodeURIComponent(task.description);
+            const startDate = task.dueDate.toISOString();
+            
+            // Get user's preferred calendar from settings
+            const preferredCalendar = vscode.workspace.getConfiguration('recurringTasks').get<string>('preferredCalendar', 'Ask each time');
+            
+            let calendarChoice: string;
+            
+            if (preferredCalendar === 'Ask each time') {
+                // Ask user which web calendar to use
+                const userChoice = await vscode.window.showQuickPick(
+                    ['Outlook Web', 'Google Calendar'],
+                    {
+                        placeHolder: 'Choose calendar application for meeting creation',
+                        canPickMany: false
+                    }
+                );
+                
+                if (!userChoice) {
+                    vscode.window.showInformationMessage('Calendar meeting creation cancelled.');
+                    return;
+                }
+                
+                calendarChoice = userChoice;
+            } else {
+                // Use the preferred calendar setting
+                calendarChoice = preferredCalendar;
+            }
+            
+            let meetingUrl: string;
+            
+            if (calendarChoice === 'Outlook Web') {
+                meetingUrl = `https://outlook.office.com/calendar/action/compose?subject=${subject}&body=${body}&startdt=${startDate}`;
+            } else if (calendarChoice === 'Google Calendar') {
+                // Google Calendar requires dates in YYYYMMDDTHHMMSSZ format
+                const googleStartDate = this.formatDateForGoogleCalendar(task.dueDate);
+                const googleEndDate = this.formatDateForGoogleCalendar(new Date(task.dueDate.getTime() + 60 * 60 * 1000)); // 1 hour later
+                meetingUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${subject}&details=${body}&dates=${googleStartDate}/${googleEndDate}`;
+            } else {
+                vscode.window.showErrorMessage('Invalid calendar choice');
+                return;
+            }
+            
+            // Open the meeting URL
+            await vscode.env.openExternal(vscode.Uri.parse(meetingUrl));
+            vscode.window.showInformationMessage(`Opening ${calendarChoice} for: ${task.title}`);
+            
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create calendar meeting: ${error}`);
+        }
+    }
+
+    /**
+     * Formats a date for Google Calendar URL (YYYYMMDDTHHMMSSZ format)
+     */
+    private formatDateForGoogleCalendar(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        
+        return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+    }
+
+    /**
+     * Allows users to set their preferred calendar provider
+     */
+    private async setPreferredCalendar(): Promise<void> {
+        const currentSetting = vscode.workspace.getConfiguration('recurringTasks').get<string>('preferredCalendar', 'Ask each time');
+        
+        const choice = await vscode.window.showQuickPick(
+            ['Outlook Web', 'Google Calendar', 'Ask each time'],
+            {
+                placeHolder: `Current setting: ${currentSetting}. Choose your preferred calendar:`,
+                canPickMany: false
+            }
+        );
+        
+        if (choice) {
+            await vscode.workspace.getConfiguration('recurringTasks').update('preferredCalendar', choice, vscode.ConfigurationTarget.Global);
+            vscode.window.showInformationMessage(`Preferred calendar set to: ${choice}`);
+        }
+    }
+
+    /**
+     * Gets the currently selected task from the tree view
+     */
+    private async getSelectedTask(): Promise<TaskTreeItem | undefined> {
+        try {
+            // For now, let's get the first available task as a fallback
+            // In a more sophisticated implementation, we would get the actually selected task
+            const tasks = this.taskManager.getTasks();
+            if (tasks.length > 0) {
+                // Create a TaskTreeItem from the first task
+                return {
+                    task: tasks[0],
+                    label: tasks[0].title,
+                    collapsibleState: vscode.TreeItemCollapsibleState.None
+                } as TaskTreeItem;
+            }
+
+            return undefined;
+        } catch (error) {
+            console.error('Error getting selected task:', error);
+            return undefined;
         }
     }
 } 
