@@ -18,6 +18,8 @@ export interface Comment {
     text: string;
     /** The date when the comment was added */
     date: Date;
+    /** Whether this comment is associated with a task validation */
+    isValidation: boolean;
 }
 
 /**

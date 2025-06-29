@@ -426,9 +426,12 @@ export class TaskDetailsProvider {
 
         const commentsHtml = task.comments.length > 0 
             ? [...task.comments].reverse().map(comment => `
-                <div class="comment" data-comment-id="${comment.id}">
+                <div class="comment ${comment.isValidation ? 'validation-comment' : 'regular-comment'}" data-comment-id="${comment.id}">
                     <div class="comment-header">
-                        <span class="comment-date">${formatDate(comment.date)}</span>
+                        <div class="comment-info">
+                            <span class="comment-date">${formatDate(comment.date)}</span>
+                            ${comment.isValidation ? '<span class="validation-badge">✓ Validation</span>' : ''}
+                        </div>
                         <div class="comment-actions">
                             <button class="edit-comment-btn codicon codicon-edit" onclick="editComment('${comment.id}')" title="Edit comment"></button>
                             <button class="delete-comment-btn codicon codicon-trash" onclick="deleteComment('${comment.id}')" title="Delete comment"></button>
@@ -607,11 +610,36 @@ export class TaskDetailsProvider {
             border-left: 3px solid var(--vscode-activityBarBadge-background);
         }
 
+        .validation-comment {
+            border-left: 3px solid var(--vscode-testing-iconPassed);
+            background-color: var(--vscode-testing-iconPassed);
+            background-color: rgba(0, 255, 0, 0.05);
+        }
+
+        .regular-comment {
+            border-left: 3px solid var(--vscode-activityBarBadge-background);
+        }
+
         .comment-header {
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .comment-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .validation-badge {
+            background-color: var(--vscode-testing-iconPassed);
+            color: var(--vscode-activityBarBadge-foreground);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 500;
         }
 
         .comment-date {
@@ -1446,7 +1474,7 @@ export class TaskDetailsProvider {
             vscode.postMessage({
                 command: 'validateTask',
                 taskId: taskId,
-                commentText: commentText || 'Task validated'
+                commentText: commentText
             });
             document.getElementById('validate-comment-textarea').value = '';
         }

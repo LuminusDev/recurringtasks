@@ -26,6 +26,16 @@ export class TaskManager {
                 task.status = 'active';
                 hasChanges = true;
             }
+            
+            // Migrate existing comments that don't have the isValidation property
+            if (task.comments) {
+                task.comments.forEach(comment => {
+                    if (!comment.hasOwnProperty('isValidation')) {
+                        comment.isValidation = false;
+                        hasChanges = true;
+                    }
+                });
+            }
         });
         
         // Save back to storage if any tasks were migrated
@@ -119,11 +129,15 @@ export class TaskManager {
 
         const task = this.tasks[taskIndex];
         
+        // Generate auto-comment if no comment provided
+        const finalCommentText = commentText.trim() || `Task validated on ${new Date().toLocaleDateString()}`;
+        
         // Add the validation comment
         const comment: Comment = {
             id: this.generateCommentId(),
-            text: commentText,
-            date: new Date()
+            text: finalCommentText,
+            date: new Date(),
+            isValidation: true
         };
         
         task.comments.push(comment);
@@ -152,7 +166,8 @@ export class TaskManager {
         const comment: Comment = {
             id: this.generateCommentId(),
             text: commentText,
-            date: new Date()
+            date: new Date(),
+            isValidation: false
         };
         
         task.comments.push(comment);
