@@ -583,27 +583,33 @@ export class TaskDetailsProvider {
             margin-bottom: 15px;
         }
 
-        .task-meta {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
+        .compact-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-top: 1px solid var(--vscode-panel-border);
+            border-bottom: 1px solid var(--vscode-panel-border);
         }
 
-        .meta-item {
-            background-color: var(--vscode-editor-inactiveSelectionBackground);
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        .meta-label {
+        .compact-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 0.9em;
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: 5px;
         }
 
-        .meta-value {
-            font-weight: 500;
+        .meta-icon {
+            font-size: 1em;
+            opacity: 0.8;
+        }
+
+        .meta-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--vscode-foreground);
         }
 
         .status-badge {
@@ -863,12 +869,6 @@ export class TaskDetailsProvider {
             padding: 20px;
         }
 
-        .periodicity {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
         .periodicity-value {
             font-weight: bold;
         }
@@ -926,21 +926,6 @@ export class TaskDetailsProvider {
 
         .task-icon.normal {
             color: var(--vscode-testing-iconPassed);
-        }
-
-        .periodicity-icon {
-            color: var(--vscode-symbolIcon-propertyForeground);
-            margin-right: 5px;
-        }
-
-        .date-icon {
-            color: var(--vscode-descriptionForeground);
-            margin-right: 5px;
-        }
-
-        .comments-icon {
-            color: var(--vscode-symbolIcon-methodForeground);
-            margin-right: 8px;
         }
 
         .time-progress {
@@ -1375,6 +1360,27 @@ export class TaskDetailsProvider {
                 <div class="progress-percentage">${TaskStatusUtil.getTimeProgress(task)}% Complete</div>
             </div>
             <div class="status-description">${getStatusInfo().description}</div>
+            
+            <div class="compact-meta">
+                <div class="compact-meta-item">
+                    <span class="meta-icon">🔄</span>
+                    <span class="meta-info">
+                        <span id="periodicity-display">
+                            <span class="periodicity-value">${task.periodicity.value}</span>
+                            <span class="periodicity-unit">${task.periodicity.unit}</span>
+                        </span>
+                        <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
+                    </span>
+                </div>
+                <div class="compact-meta-item">
+                    <span class="meta-icon">⏰</span>
+                    <span class="meta-info">
+                        <span id="due-date-display">Due ${formatDate(task.dueDate)}</span>
+                        <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="Edit due date"></button>
+                    </span>
+                </div>
+            </div>
+            
             <div class="time-visual">
                 <div class="time-circle ${getStatusClass()}">${TaskStatusUtil.getTimeProgress(task)}%</div>
                 <div class="time-details">
@@ -1386,51 +1392,6 @@ export class TaskDetailsProvider {
             </div>
             <div class="progress-bar">
                 <div class="progress-fill ${getStatusClass()}" style="width: ${TaskStatusUtil.getTimeProgress(task)}%"></div>
-            </div>
-            <div class="progress-labels">
-                <span class="progress-start">Start: ${formatDate(task.startDate)}</span>
-                <span class="progress-end">Due: ${formatDate(task.dueDate)}</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="task-meta">
-        <div class="meta-item">
-            <div class="meta-label">Periodicity</div>
-            <div class="meta-value">
-                <span class="periodicity">
-                    <span class="periodicity-icon">🔄</span>
-                    <span id="periodicity-display">
-                        <span class="periodicity-value">${task.periodicity.value}</span>
-                        <span class="periodicity-unit">${task.periodicity.unit}</span>
-                    </span>
-                    <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
-                </span>
-            </div>
-        </div>
-        
-        <div class="meta-item">
-            <div class="meta-label">Start Date</div>
-            <div class="meta-value">
-                <span class="date-icon">📅</span>
-                ${formatDate(task.startDate)}
-            </div>
-        </div>
-        
-        <div class="meta-item">
-            <div class="meta-label">Next Due Date</div>
-            <div class="meta-value">
-                <span class="date-icon">⏰</span>
-                <span id="due-date-display">${formatDate(task.dueDate)}</span>
-                <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="Edit due date"></button>
-            </div>
-        </div>
-        
-        <div class="meta-item">
-            <div class="meta-label">Comments</div>
-            <div class="meta-value">
-                <span class="comments-icon">💬</span>
-                ${task.comments.length} comment${task.comments.length !== 1 ? 's' : ''}
             </div>
         </div>
     </div>
