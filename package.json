@@ -43,6 +43,16 @@
         "icon": "$(check)"
       },
       {
+        "command": "recurringtasks.archiveTask",
+        "title": "Recurring Tasks: Archive Task",
+        "icon": "$(archive)"
+      },
+      {
+        "command": "recurringtasks.unarchiveTask",
+        "title": "Recurring Tasks: Unarchive Task",
+        "icon": "$(debug-step-back)"
+      },
+      {
         "command": "recurringtasks.deleteTask",
         "title": "Recurring Tasks: Delete Task",
         "icon": "$(trash)"
@@ -72,13 +82,23 @@
       ],
       "view/item/context": [
         {
-          "command": "recurringtasks.validateTask",
-          "when": "view == recurringTasks.view",
+          "command": "recurringtasks.deleteTask",
+          "when": "view == recurringTasks.view && viewItem == 'archived' && viewItem != 'category'",
           "group": "inline"
         },
         {
-          "command": "recurringtasks.deleteTask",
-          "when": "view == recurringTasks.view",
+          "command": "recurringtasks.validateTask",
+          "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
+          "group": "inline"
+        },
+        {
+          "command": "recurringtasks.archiveTask",
+          "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
+          "group": "inline"
+        },
+        {
+          "command": "recurringtasks.unarchiveTask",
+          "when": "view == recurringTasks.view && viewItem == 'archived' && viewItem != 'category'",
           "group": "inline"
         }
       ]

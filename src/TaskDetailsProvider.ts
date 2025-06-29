@@ -331,7 +331,7 @@ export class TaskDetailsProvider {
     private static refreshTaskProvider(): void {
         if (TaskDetailsProvider.taskProvider && TaskDetailsProvider.taskManager) {
             const tasks = TaskDetailsProvider.taskManager.getTasks();
-            TaskDetailsProvider.taskProvider.updateTasks(tasks);
+            TaskDetailsProvider.taskProvider.refresh();
         }
     }
 

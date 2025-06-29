@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Task } from './Task';
+import { TaskManager } from './TaskManager';
 import { TaskStatusUtil } from './TaskStatusUtil';
 
 /**
@@ -8,12 +9,15 @@ import { TaskStatusUtil } from './TaskStatusUtil';
 export class TaskTreeItem extends vscode.TreeItem {
     constructor(
         public readonly task: Task,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+        public readonly contextValue: 'overdue' | 'dueSoon' | 'normal' | 'archived'
     ) {
         super(task.title, collapsibleState);
         
         this.tooltip = `${task.title} - ${task.description}`;
-        this.description = TaskStatusUtil.getComprehensiveStatus(task);
+        if (contextValue !== 'archived') {
+            this.description = TaskStatusUtil.getComprehensiveStatus(task);
+        }
         
         // Add command to show task details when clicked
         this.command = {
@@ -23,7 +27,9 @@ export class TaskTreeItem extends vscode.TreeItem {
         };
         
         // Set icon based on task status
-        if (TaskStatusUtil.isOverdue(task)) {
+        if (contextValue === 'archived') {
+            this.iconPath = new vscode.ThemeIcon('archive');
+        } else if (TaskStatusUtil.isOverdue(task)) {
             this.iconPath = new vscode.ThemeIcon('error');
             this.contextValue = 'overdue';
         } else if (TaskStatusUtil.isDueSoon(task)) {
@@ -36,16 +42,25 @@ export class TaskTreeItem extends vscode.TreeItem {
     }
 }
 
+class CategoryTreeItem extends vscode.TreeItem {
+    constructor(
+        public readonly label: string,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+        public tasks: Task[]
+    ) {
+        super(label, collapsibleState);
+        this.contextValue = 'category';
+    }
+}
+
 /**
  * Tree data provider for displaying tasks in the sidebar
  */
-export class TaskProvider implements vscode.TreeDataProvider<TaskTreeItem> {
-    private _onDidChangeTreeData: vscode.EventEmitter<TaskTreeItem | undefined | null | void> = new vscode.EventEmitter<TaskTreeItem | undefined | null | void>();
-    readonly onDidChangeTreeData: vscode.Event<TaskTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+export class TaskProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-    private tasks: Task[] = [];
-
-    constructor() {}
+    constructor(private taskManager: TaskManager) {}
 
     /**
      * Refreshes the tree view
@@ -55,17 +70,9 @@ export class TaskProvider implements vscode.TreeDataProvider<TaskTreeItem> {
     }
 
     /**
-     * Updates the tasks and refreshes the view
-     */
-    updateTasks(tasks: Task[]): void {
-        this.tasks = tasks;
-        this.refresh();
-    }
-
-    /**
      * Gets the tree item for a given element
      */
-    getTreeItem(element: TaskTreeItem): vscode.TreeItem {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
         return element;
     }
 
@@ -73,35 +80,51 @@ export class TaskProvider implements vscode.TreeDataProvider<TaskTreeItem> {
      * Sorts tasks by due date with overdue tasks at the top
      */
     private sortTasks(tasks: Task[]): Task[] {
-        const now = new Date();
-        
-        return tasks.sort((a, b) => {
-            const aIsOverdue = a.dueDate < now;
-            const bIsOverdue = b.dueDate < now;
-            
-            // If both are overdue or both are not overdue, sort by due date
-            if (aIsOverdue === bIsOverdue) {
-                return a.dueDate.getTime() - b.dueDate.getTime();
-            }
-            
-            // Overdue tasks come first
-            return aIsOverdue ? -1 : 1;
-        });
+        return tasks.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
     }
 
     /**
      * Gets the children of a given element
      */
-    getChildren(element?: TaskTreeItem): Thenable<TaskTreeItem[]> {
-        if (element) {
-            // If we implement task details/children later, they would go here
-            return Promise.resolve([]);
-        } else {
-            // Sort tasks and return as root items
-            const sortedTasks = this.sortTasks(this.tasks);
+    getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
+        if (element instanceof CategoryTreeItem) {
             return Promise.resolve(
-                sortedTasks.map(task => new TaskTreeItem(task, vscode.TreeItemCollapsibleState.None))
+                this.sortTasks(element.tasks).map(task => {
+                    if (element.label === 'Archived') {
+                        return new TaskTreeItem(task, vscode.TreeItemCollapsibleState.None, 'archived');
+                    }
+                    if (TaskStatusUtil.isOverdue(task)) {
+                        return new TaskTreeItem(task, vscode.TreeItemCollapsibleState.None, 'overdue');
+                    }
+                    if (TaskStatusUtil.isDueSoon(task)) {
+                        return new TaskTreeItem(task, vscode.TreeItemCollapsibleState.None, 'dueSoon');
+                    }
+                    return new TaskTreeItem(task, vscode.TreeItemCollapsibleState.None, 'normal');
+                })
             );
+        } else {
+            const overdueTasks = this.taskManager.getOverdueTasks();
+            const dueSoonTasks = this.taskManager.getTasks().filter(task => TaskStatusUtil.isDueSoon(task));
+            const otherTasks = this.taskManager.getTasks().filter(task => 
+                !TaskStatusUtil.isOverdue(task) && !TaskStatusUtil.isDueSoon(task)
+            );
+            const archivedTasks = this.taskManager.getArchivedTasks();
+
+            const categories: CategoryTreeItem[] = [];
+            if (overdueTasks.length > 0) {
+                categories.push(new CategoryTreeItem('Overdue', vscode.TreeItemCollapsibleState.Expanded, overdueTasks));
+            }
+            if (dueSoonTasks.length > 0) {
+                categories.push(new CategoryTreeItem('Due Soon', vscode.TreeItemCollapsibleState.Expanded, dueSoonTasks));
+            }
+            if (otherTasks.length > 0) {
+                categories.push(new CategoryTreeItem('Upcoming', vscode.TreeItemCollapsibleState.Expanded, otherTasks));
+            }
+            if (archivedTasks.length > 0) {
+                categories.push(new CategoryTreeItem('Archived', vscode.TreeItemCollapsibleState.Collapsed, archivedTasks));
+            }
+
+            return Promise.resolve(categories);
         }
     }
 } 

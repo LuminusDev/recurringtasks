@@ -18,6 +18,20 @@ export class TaskManager {
      */
     private loadTasks(): void {
         this.tasks = this.storageManager.getTasks();
+        
+        // Migrate existing tasks that don't have the status property
+        let hasChanges = false;
+        this.tasks.forEach(task => {
+            if (!task.hasOwnProperty('status')) {
+                task.status = 'active';
+                hasChanges = true;
+            }
+        });
+        
+        // Save back to storage if any tasks were migrated
+        if (hasChanges) {
+            this.saveTasks();
+        }
     }
 
     /**
@@ -66,10 +80,10 @@ export class TaskManager {
     }
 
     /**
-     * Returns all tasks
+     * Returns all active tasks
      */
     getTasks(): Task[] {
-        return [...this.tasks]; // Return a copy to prevent external modifications
+        return this.tasks.filter(task => task.status === 'active');
     }
 
     /**
@@ -83,7 +97,8 @@ export class TaskManager {
             periodicity,
             startDate,
             dueDate: new Date(startDate), // Initial due date is the same as start date
-            comments: []
+            comments: [],
+            status: 'active'
         };
 
         this.tasks.push(newTask);
@@ -197,7 +212,33 @@ export class TaskManager {
     }
 
     /**
-     * Deletes a task
+     * Archives a task
+     */
+    archiveTask(taskId: string): boolean {
+        const task = this.tasks.find(task => task.id === taskId);
+        if (task) {
+            task.status = 'archived';
+            this.saveTasks();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Unarchives a task
+     */
+    unarchiveTask(taskId: string): boolean {
+        const task = this.tasks.find(task => task.id === taskId);
+        if (task) {
+            task.status = 'active';
+            this.saveTasks();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Deletes a task permanently
      */
     deleteTask(taskId: string): boolean {
         const taskIndex = this.tasks.findIndex(task => task.id === taskId);
@@ -244,17 +285,13 @@ export class TaskManager {
      */
     getOverdueTasks(): Task[] {
         const now = new Date();
-        return this.tasks.filter(task => task.dueDate < now);
+        return this.tasks.filter(task => task.status === 'active' && task.dueDate < now);
     }
 
     /**
-     * Gets tasks due within the next specified number of days
+     * Gets archived tasks
      */
-    getTasksDueWithinDays(days: number): Task[] {
-        const now = new Date();
-        const futureDate = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
-        return this.tasks.filter(task => 
-            task.dueDate >= now && task.dueDate <= futureDate
-        );
+    getArchivedTasks(): Task[] {
+        return this.tasks.filter(task => task.status === 'archived');
     }
 } 

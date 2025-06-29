@@ -38,4 +38,6 @@ export interface Task {
     dueDate: Date;
     /** History of comments/validations for this task */
     comments: Comment[];
+    /** The status of the task */
+    status: 'active' | 'archived';
 } 

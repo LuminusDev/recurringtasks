@@ -33,6 +33,16 @@ export class Commands {
             this.validateTask(item);
         });
 
+        // Archive Task command
+        const archiveTaskCommand = vscode.commands.registerCommand('recurringtasks.archiveTask', (item: TaskTreeItem) => {
+            this.archiveTask(item);
+        });
+
+        // Unarchive Task command
+        const unarchiveTaskCommand = vscode.commands.registerCommand('recurringtasks.unarchiveTask', (item: TaskTreeItem) => {
+            this.unarchiveTask(item);
+        });
+
         // Delete Task command
         const deleteTaskCommand = vscode.commands.registerCommand('recurringtasks.deleteTask', (item: TaskTreeItem) => {
             this.deleteTask(item);
@@ -52,6 +62,8 @@ export class Commands {
         context.subscriptions.push(
             addTaskCommand,
             validateTaskCommand,
+            archiveTaskCommand,
+            unarchiveTaskCommand,
             deleteTaskCommand,
             refreshTasksCommand,
             showTaskDetailsCommand
@@ -100,6 +112,40 @@ export class Commands {
     }
 
     /**
+     * Handles archiving a task
+     */
+    private async archiveTask(item: TaskTreeItem): Promise<void> {
+        try {
+            const success = this.taskManager.archiveTask(item.task.id);
+            if (success) {
+                this.refreshTasks();
+                vscode.window.showInformationMessage(`Task "${item.task.title}" archived.`);
+            } else {
+                vscode.window.showErrorMessage('Failed to archive task.');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to archive task: ${error}`);
+        }
+    }
+
+    /**
+     * Handles unarchiving a task
+     */
+    private async unarchiveTask(item: TaskTreeItem): Promise<void> {
+        try {
+            const success = this.taskManager.unarchiveTask(item.task.id);
+            if (success) {
+                this.refreshTasks();
+                vscode.window.showInformationMessage(`Task "${item.task.title}" unarchived.`);
+            } else {
+                vscode.window.showErrorMessage('Failed to unarchive task.');
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to unarchive task: ${error}`);
+        }
+    }
+
+    /**
      * Handles deleting a task
      */
     private async deleteTask(item: TaskTreeItem): Promise<void> {
@@ -131,8 +177,7 @@ export class Commands {
      * Refreshes the task view
      */
     private refreshTasks(): void {
-        const tasks = this.taskManager.getTasks();
-        this.taskProvider.updateTasks(tasks);
+        this.taskProvider.refresh();
     }
 
     /**

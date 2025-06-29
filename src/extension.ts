@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
 		TaskDetailsProvider.setTaskManager(taskManager);
 		
 		// Initialize the task provider
-		taskProvider = new TaskProvider();
+		taskProvider = new TaskProvider(taskManager);
 		
 		// Set the task provider in the TaskDetailsProvider for refreshing the sidebar
 		TaskDetailsProvider.setTaskProvider(taskProvider);
@@ -47,15 +47,13 @@ export function activate(context: vscode.ExtensionContext) {
 		// Register all commands
 		commands.registerCommands(context);
 		
-		// Load initial tasks and update the view
-		const initialTasks = taskManager.getTasks();
-		taskProvider.updateTasks(initialTasks);
+		// Initial refresh of the view
+		taskProvider.refresh();
 		
 		// Set up event listener for task updates
 		// This ensures the view refreshes when tasks change
 		const updateView = () => {
-			const tasks = taskManager.getTasks();
-			taskProvider.updateTasks(tasks);
+			taskProvider.refresh();
 		};
 		
 		// Add the tree view to subscriptions
