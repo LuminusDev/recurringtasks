@@ -1,14 +1,42 @@
 {
   "name": "recurringtasks",
-  "displayName": "RecurringTasks",
-  "description": "Manage and see recurring tasks to remind you",
+  "displayName": "Recurring Tasks",
+  "publisher": "LuminusDev",
+  "license": "MIT",
+  "author": {
+    "name": "LuminusDev"
+  },
+  "description": "Manage recurring tasks with smart scheduling, calendar integration, and JIRA sync. Features automatic validation, meeting creation, export/import, and visual task organization.",
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.93.0"
   },
   "categories": [
+    "Productivity",
     "Other"
   ],
+  "keywords": [
+    "tasks",
+    "recurring",
+    "productivity",
+    "reminder",
+    "calendar",
+    "jira",
+    "time-management"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LuminusDev/recurringtasks.git"
+  },
+  "homepage": "https://github.com/LuminusDev/recurringtasks#readme",
+  "bugs": {
+    "url": "https://github.com/LuminusDev/recurringtasks/issues"
+  },
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
