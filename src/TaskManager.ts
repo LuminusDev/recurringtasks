@@ -18,37 +18,6 @@ export class TaskManager {
      */
     private loadTasks(): void {
         this.tasks = this.storageManager.getTasks();
-        
-        // Migrate existing tasks
-        let hasChanges = false;
-        this.tasks.forEach(task => {
-            // Migrate status property if missing
-            if (!task.hasOwnProperty('status')) {
-                task.status = 'active';
-                hasChanges = true;
-            }
-            
-            // Migrate periodicity to new format if it's in old format
-            if (task.periodicity && 'unit' in task.periodicity) {
-                task.periodicity = PeriodicityHelper.migrateOldPeriodicity(task.periodicity);
-                hasChanges = true;
-            }
-            
-            // Migrate existing comments that don't have the isValidation property
-            if (task.comments) {
-                task.comments.forEach(comment => {
-                    if (!comment.hasOwnProperty('isValidation')) {
-                        comment.isValidation = false;
-                        hasChanges = true;
-                    }
-                });
-            }
-        });
-        
-        // Save back to storage if any tasks were migrated
-        if (hasChanges) {
-            this.saveTasks();
-        }
     }
 
     /**
@@ -303,5 +272,120 @@ export class TaskManager {
      */
     getArchivedTasks(): Task[] {
         return this.tasks.filter(task => task.status === 'archived');
+    }
+
+    /**
+     * Gets all tasks (both active and archived) for export
+     */
+    getAllTasks(): Task[] {
+        return [...this.tasks];
+    }
+
+    /**
+     * Exports all tasks to JSON format
+     */
+    exportTasks(): string {
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            version: '1.0',
+            tasks: this.tasks
+        };
+        
+        return JSON.stringify(exportData, null, 2);
+    }
+
+    /**
+     * Imports tasks from JSON data, adding them to existing tasks without deleting current ones
+     * Returns the number of tasks imported and any errors encountered
+     */
+    importTasks(jsonData: string): { success: boolean; imported: number; errors: string[]; message: string } {
+        try {
+            const parsedData = JSON.parse(jsonData);
+            const errors: string[] = [];
+            let imported = 0;
+
+            // Validate the JSON structure
+            if (!parsedData.tasks || !Array.isArray(parsedData.tasks)) {
+                return {
+                    success: false,
+                    imported: 0,
+                    errors: ['Invalid JSON format: tasks array not found'],
+                    message: 'Import failed: Invalid JSON format'
+                };
+            }
+
+            // Get existing task IDs to avoid duplicates
+            const existingIds = new Set(this.tasks.map(task => task.id));
+
+            // Process each task in the import data
+            for (let i = 0; i < parsedData.tasks.length; i++) {
+                const taskData = parsedData.tasks[i];
+                
+                try {
+                    // Validate required fields
+                    if (!taskData.id || !taskData.title || !taskData.description || !taskData.periodicity) {
+                        errors.push(`Task ${i + 1}: Missing required fields (id, title, description, or periodicity)`);
+                        continue;
+                    }
+
+                    // Check for duplicate IDs
+                    if (existingIds.has(taskData.id)) {
+                        // Generate a new unique ID for the duplicate
+                        const originalId = taskData.id;
+                        taskData.id = this.generateId();
+                        errors.push(`Task "${taskData.title}": Duplicate ID ${originalId} found, assigned new ID ${taskData.id}`);
+                    }
+
+                    // Convert date strings back to Date objects
+                    const task: Task = {
+                        id: taskData.id,
+                        title: taskData.title,
+                        description: taskData.description,
+                        periodicity: taskData.periodicity,
+                        creationDate: new Date(taskData.creationDate || new Date()),
+                        dueDate: new Date(taskData.dueDate || new Date()),
+                        comments: taskData.comments ? taskData.comments.map((comment: any) => ({
+                            id: comment.id || this.generateCommentId(),
+                            text: comment.text || '',
+                            date: new Date(comment.date || new Date()),
+                            isValidation: comment.isValidation || false
+                        })) : [],
+                        status: taskData.status || 'active'
+                    };
+
+                    // Add the task
+                    this.tasks.push(task);
+                    existingIds.add(task.id);
+                    imported++;
+
+                } catch (taskError) {
+                    errors.push(`Task ${i + 1}: ${taskError}`);
+                }
+            }
+
+            // Save tasks if any were imported
+            if (imported > 0) {
+                this.saveTasks();
+            }
+
+            const message = imported > 0 
+                ? `Successfully imported ${imported} task${imported === 1 ? '' : 's'}`
+                : 'No tasks were imported';
+
+            return {
+                success: imported > 0,
+                imported,
+                errors,
+                message: errors.length > 0 ? `${message}. ${errors.length} warning(s)/error(s) occurred.` : message
+            };
+
+        } catch (parseError) {
+            return {
+                success: false,
+                imported: 0,
+                errors: [`JSON parsing error: ${parseError}`],
+                message: 'Import failed: Invalid JSON format'
+            };
+        }
     }
 } 

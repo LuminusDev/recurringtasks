@@ -106,6 +106,16 @@ export class Commands {
             this.testJiraConnection();
         });
 
+        // Export Tasks command
+        const exportTasksCommand = vscode.commands.registerCommand('recurringtasks.exportTasks', () => {
+            this.exportTasks();
+        });
+
+        // Import Tasks command
+        const importTasksCommand = vscode.commands.registerCommand('recurringtasks.importTasks', () => {
+            this.importTasks();
+        });
+
         // Add all commands to subscriptions
         context.subscriptions.push(
             addTaskCommand,
@@ -119,7 +129,9 @@ export class Commands {
             setPreferredCalendarCommand,
             createJiraIssueCommand,
             configureJiraCommand,
-            testJiraConnectionCommand
+            testJiraConnectionCommand,
+            exportTasksCommand,
+            importTasksCommand
         );
     }
 
@@ -597,6 +609,143 @@ You can set these in VS Code Settings (Ctrl+,) under "Recurring Tasks > Jira".
             });
         } catch (error) {
             vscode.window.showErrorMessage(`Error testing JIRA connection: ${error}`);
+        }
+    }
+
+    /**
+     * Exports all tasks to a JSON file
+     */
+    private async exportTasks(): Promise<void> {
+        try {
+            const tasks = this.taskManager.getAllTasks();
+            
+            if (tasks.length === 0) {
+                vscode.window.showInformationMessage('No tasks to export.');
+                return;
+            }
+
+            // Generate a default filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const defaultFileName = `recurring-tasks-export-${timestamp}.json`;
+
+            // Ask user where to save the file
+            const saveUri = await vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file(defaultFileName),
+                filters: {
+                    'JSON files': ['json'],
+                    'All files': ['*']
+                },
+                saveLabel: 'Export Tasks'
+            });
+
+            if (!saveUri) {
+                vscode.window.showInformationMessage('Export cancelled.');
+                return;
+            }
+
+            // Export tasks to JSON
+            const jsonData = this.taskManager.exportTasks();
+            
+            // Write to file
+            await vscode.workspace.fs.writeFile(saveUri, Buffer.from(jsonData, 'utf8'));
+            
+            const action = await vscode.window.showInformationMessage(
+                `Successfully exported ${tasks.length} task${tasks.length === 1 ? '' : 's'} to ${saveUri.fsPath}`,
+                'Open File',
+                'Show in Explorer'
+            );
+
+            if (action === 'Open File') {
+                await vscode.window.showTextDocument(saveUri);
+            } else if (action === 'Show in Explorer') {
+                await vscode.commands.executeCommand('revealFileInOS', saveUri);
+            }
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to export tasks: ${error}`);
+        }
+    }
+
+    /**
+     * Imports tasks from a JSON file
+     */
+    private async importTasks(): Promise<void> {
+        try {
+            // Ask user to select the file to import
+            const openUri = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                canSelectMany: false,
+                filters: {
+                    'JSON files': ['json'],
+                    'All files': ['*']
+                },
+                openLabel: 'Import Tasks'
+            });
+
+            if (!openUri || openUri.length === 0) {
+                vscode.window.showInformationMessage('Import cancelled.');
+                return;
+            }
+
+            const fileUri = openUri[0];
+
+            // Show progress
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Importing tasks...',
+                cancellable: false
+            }, async (progress) => {
+                progress.report({ increment: 0, message: 'Reading file...' });
+
+                // Read the file
+                const fileData = await vscode.workspace.fs.readFile(fileUri);
+                const jsonData = Buffer.from(fileData).toString('utf8');
+
+                progress.report({ increment: 50, message: 'Processing tasks...' });
+
+                // Import tasks
+                const result = this.taskManager.importTasks(jsonData);
+
+                progress.report({ increment: 100, message: 'Done!' });
+
+                if (result.success) {
+                    // Refresh the task view
+                    this.refreshTasks();
+
+                    // Show success message with details
+                    let message = result.message;
+                    if (result.errors.length > 0) {
+                        message += `\n\nWarnings/Errors:\n${result.errors.slice(0, 5).join('\n')}`;
+                        if (result.errors.length > 5) {
+                            message += `\n... and ${result.errors.length - 5} more`;
+                        }
+                    }
+
+                    if (result.errors.length > 0) {
+                        const action = await vscode.window.showWarningMessage(
+                            message,
+                            'Show Details'
+                        );
+
+                        if (action === 'Show Details') {
+                            // Show all errors in a new document
+                            const doc = await vscode.workspace.openTextDocument({
+                                content: `Import Results:\n\n${result.message}\n\nAll Warnings/Errors:\n${result.errors.join('\n')}`,
+                                language: 'plaintext'
+                            });
+                            await vscode.window.showTextDocument(doc);
+                        }
+                    } else {
+                        vscode.window.showInformationMessage(message);
+                    }
+                } else {
+                    vscode.window.showErrorMessage(result.message);
+                }
+            });
+
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to import tasks: ${error}`);
         }
     }
 } 

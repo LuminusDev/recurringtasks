@@ -18,6 +18,8 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 - **JIRA Integration**: Create JIRA issues directly from tasks with automatic population of task details
 - **JIRA Configuration**: Easy setup with your JIRA instance URL, email, and API token
 - **Project and Issue Type Selection**: Choose from available projects and issue types when creating JIRA issues
+- **Task Export/Import**: Export all tasks to JSON format for backup and sharing, import tasks from JSON files
+- **Non-destructive Import**: Import tasks without deleting existing ones, with automatic duplicate ID handling
 - **Colored Icons**: Rich visual experience with colored icons throughout the interface
 - **Smart Time Display**: Shows time remaining in human-readable format (e.g., "Due in 3 days", "Overdue by 2 days")
 - **Visual Status Indicators**: Different icons for overdue, due soon, and normal tasks
@@ -157,6 +159,54 @@ Before you can create JIRA issues, you need to configure your JIRA connection:
 
 - **Create JIRA Issue**: `Ctrl+Shift+J` (when in the task details view)
 
+### Exporting and Importing Tasks
+
+You can export your tasks to a JSON file for backup or sharing, and import tasks from JSON files to add them to your collection.
+
+#### Exporting Tasks
+
+1. **Click the export button** (📤) in the "Recurring Tasks" view header, or
+2. **Use Command Palette**: Press `Ctrl+Shift+P` and type "Recurring Tasks: Export Tasks"
+3. **Choose save location**: Select where to save the JSON file
+4. **File is created**: A timestamped JSON file with all your tasks is created
+5. **Optional actions**: After export, you can:
+   - **Open File**: View the exported JSON directly in VS Code
+   - **Show in Explorer**: Open the file location in your system file manager
+
+The exported JSON includes:
+
+- **Export metadata**: Date and version information
+- **All tasks**: Both active and archived tasks
+- **Complete data**: All task properties, comments, and history
+
+#### Importing Tasks
+
+1. **Click the import button** (⬇️) in the "Recurring Tasks" view header, or
+2. **Use Command Palette**: Press `Ctrl+Shift+P` and type "Recurring Tasks: Import Tasks"
+3. **Select JSON file**: Choose the file containing tasks to import
+4. **Import process**: The system will:
+   - Validate the JSON format
+   - Check for required fields
+   - Handle duplicate IDs (generates new unique IDs if needed)
+   - Convert date strings to proper Date objects
+   - Migrate old periodicity formats if present
+5. **Results**: You'll see a summary of imported tasks and any warnings/errors
+
+**Important Notes:**
+
+- **Non-destructive import**: Imported tasks are added to your existing collection without deleting current tasks
+- **Duplicate handling**: If imported tasks have duplicate IDs, new unique IDs are automatically generated
+- **Data validation**: Invalid tasks are skipped with detailed error reporting
+- **Progress tracking**: Import progress is shown with a progress indicator
+
+#### Export/Import Use Cases
+
+- **Backup**: Export your tasks before making major changes
+- **Sharing**: Share task collections with team members
+- **Migration**: Move tasks between different VS Code installations
+- **Recovery**: Restore tasks from a previous export
+- **Testing**: Import sample tasks for testing purposes
+
 ### Deleting a Task
 
 1. Right-click on a task in the sidebar
@@ -180,10 +230,6 @@ Before you can create JIRA issues, you need to configure your JIRA connection:
 - "Due tomorrow" - for tasks due tomorrow
 - "Due in X days" - for tasks due within a week
 - "Due in X weeks" - for tasks due in more than a week
-
-## Requirements
-
-- VS Code version 1.101.0 or higher
 
 ## Extension Settings
 

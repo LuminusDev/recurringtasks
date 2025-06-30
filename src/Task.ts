@@ -204,32 +204,6 @@ export class PeriodicityHelper {
     }
 
     /**
-     * Migrates old periodicity format to new format
-     */
-    static migrateOldPeriodicity(oldPeriodicity: any): Periodicity {
-        // Handle the old format: { value: number, unit: string }
-        if (oldPeriodicity.unit === 'one-shot') {
-            return PeriodicityHelper.createOneShot();
-        }
-
-        const value = oldPeriodicity.value || 1;
-        
-        switch (oldPeriodicity.unit) {
-            case 'days':
-                return PeriodicityHelper.createDaily(value);
-            case 'weeks':
-                return PeriodicityHelper.createWeekly(value);
-            case 'months':
-                return PeriodicityHelper.createMonthly(value);
-            case 'years':
-                return PeriodicityHelper.createYearly(value);
-            default:
-                // Fallback to one-shot for unknown units
-                return PeriodicityHelper.createOneShot();
-        }
-    }
-
-    /**
      * Gets available periodicity options for UI
      */
     static getPeriodicityOptions(): Array<{value: string, label: string, description: string}> {
