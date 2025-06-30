@@ -92,22 +92,22 @@
       },
       {
         "command": "recurringtasks.validateTask",
-        "title": "Recurring Tasks: Validate Task",
+        "title": "Validate Task",
         "icon": "$(check)"
       },
       {
         "command": "recurringtasks.archiveTask",
-        "title": "Recurring Tasks: Archive Task",
+        "title": "Archive Task",
         "icon": "$(archive)"
       },
       {
         "command": "recurringtasks.unarchiveTask",
-        "title": "Recurring Tasks: Unarchive Task",
+        "title": "Unarchive Task",
         "icon": "$(debug-step-back)"
       },
       {
         "command": "recurringtasks.deleteTask",
-        "title": "Recurring Tasks: Delete Task",
+        "title": "Delete Task",
         "icon": "$(trash)"
       },
       {
@@ -117,11 +117,11 @@
       },
       {
         "command": "recurringtasks.showTaskDetails",
-        "title": "Recurring Tasks: Show Task Details"
+        "title": "Show Task Details"
       },
       {
         "command": "recurringtasks.createOutlookMeeting",
-        "title": "Recurring Tasks: Create Calendar Meeting",
+        "title": "Create Calendar Meeting",
         "icon": "$(calendar)"
       },
       {
@@ -131,7 +131,7 @@
       },
       {
         "command": "recurringtasks.createJiraIssue",
-        "title": "Recurring Tasks: Create JIRA Issue",
+        "title": "Create JIRA Issue",
         "icon": "$(bug)"
       },
       {
@@ -182,12 +182,42 @@
         {
           "command": "recurringtasks.createOutlookMeeting",
           "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
-          "group": "inline"
+          "group": "1_modify"
         },
         {
           "command": "recurringtasks.createJiraIssue",
           "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
-          "group": "inline"
+          "group": "1_modify"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "recurringtasks.validateTask",
+          "when": "false"
+        },
+        {
+          "command": "recurringtasks.archiveTask",
+          "when": "false"
+        },
+        {
+          "command": "recurringtasks.unarchiveTask",
+          "when": "false"
+        },
+        {
+          "command": "recurringtasks.deleteTask",
+          "when": "false"
+        },
+        {
+          "command": "recurringtasks.showTaskDetails",
+          "when": "false"
+        },
+        {
+          "command": "recurringtasks.createOutlookMeeting",
+          "when": "false"
+        },
+        {
+          "command": "recurringtasks.createJiraIssue",
+          "when": "false"
         }
       ]
     },
