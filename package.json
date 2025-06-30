@@ -7,7 +7,7 @@
     "name": "LuminusDev"
   },
   "description": "Manage recurring tasks with smart scheduling, calendar integration, and JIRA sync. Features automatic validation, meeting creation, export/import, and visual task organization.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -32,10 +32,6 @@
     "url": "https://github.com/LuminusDev/recurringtasks/issues"
   },
   "icon": "images/icon.png",
-  "galleryBanner": {
-    "color": "#C80000",
-    "theme": "dark"
-  },
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
