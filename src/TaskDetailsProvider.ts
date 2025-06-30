@@ -1793,12 +1793,6 @@ export class TaskDetailsProvider {
                 taskId: taskId
             });
         }
-
-        // Set default due date to tomorrow
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const localDateTime = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        document.getElementById('due-date').value = localDateTime;
     </script>
 </body>
 </html>`;
