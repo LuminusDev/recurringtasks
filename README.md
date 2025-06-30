@@ -47,9 +47,11 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 2. Fill out the webview form with:
    - Task title
    - Description
-   - Periodicity (value and unit: days, weeks, months, years)
+   - Periodicity (value and unit: days, weeks, months, years, or "One Shot")
    - Start date and time
 3. Click "Create Task" to save
+
+**One Shot Tasks**: Tasks with "One Shot" periodicity have no recurrence and are automatically archived when validated. These are perfect for one-time tasks that don't need to repeat.
 
 ### Validating a Task
 
@@ -57,6 +59,7 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 2. Select "Validate Task"
 3. Add an optional comment
 4. The task will be marked as complete and the next due date will be calculated automatically
+   - **One Shot tasks**: Will be automatically archived after validation since they don't recur
 
 ### Editing Tasks
 
@@ -167,7 +170,7 @@ Before you can create JIRA issues, you need to configure your JIRA connection:
 ## Task Status Indicators
 
 - 🔴 **Red Error Icon**: Task is overdue
-- 🟡 **Yellow Warning Icon**: Task is due within the next 3 days
+- 🟡 **Yellow Warning Icon**: Task is due soon depending on the periodicity
 - ✅ **Green Task Icon**: Task is due normally
 
 ## Time Display Format

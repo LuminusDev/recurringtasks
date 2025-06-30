@@ -406,6 +406,18 @@ export class TaskDetailsProvider {
             return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         };
 
+        const formatPeriodicity = (periodicity: any) => {
+            // Handle new periodicity format
+            if (periodicity.description) {
+                return periodicity.description;
+            }
+            // Fallback for old format (should be migrated)
+            if (periodicity.unit === 'one-shot') {
+                return 'One Shot';
+            }
+            return `${periodicity.value} ${periodicity.unit}`;
+        };
+
         const getStatusClass = () => {
             if (TaskStatusUtil.isOverdue(task)) {return 'overdue';}
             if (TaskStatusUtil.isDueSoon(task)) {return 'due-soon';}
@@ -1079,13 +1091,6 @@ export class TaskDetailsProvider {
             color: var(--vscode-descriptionForeground);
         }
 
-        .status-description {
-            font-size: 0.9em;
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: 10px;
-            font-style: italic;
-        }
-
         .clickable-link {
             color: var(--vscode-textLink-foreground);
             text-decoration: underline;
@@ -1359,15 +1364,13 @@ export class TaskDetailsProvider {
                 <div class="status-badge ${getStatusInfo().class}">${getStatusInfo().name}</div>
                 <div class="progress-percentage">${TaskStatusUtil.getTimeProgress(task)}% Complete</div>
             </div>
-            <div class="status-description">${getStatusInfo().description}</div>
             
             <div class="compact-meta">
                 <div class="compact-meta-item">
                     <span class="meta-icon">🔄</span>
                     <span class="meta-info">
                         <span id="periodicity-display">
-                            <span class="periodicity-value">${task.periodicity.value}</span>
-                            <span class="periodicity-unit">${task.periodicity.unit}</span>
+                            <span class="periodicity-value">${formatPeriodicity(task.periodicity)}</span>
                         </span>
                         <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
                     </span>
@@ -1386,8 +1389,6 @@ export class TaskDetailsProvider {
                 <div class="time-details">
                     <div class="time-label">Time Remaining</div>
                     <div class="time-value">${getStatusInfo().timeRemaining}</div>
-                    <div class="time-label">Period Progress</div>
-                    <div class="time-value">${TaskStatusUtil.getTimeProgress(task)}% of ${task.periodicity.value} ${task.periodicity.unit}</div>
                 </div>
             </div>
             <div class="progress-bar">
@@ -1398,16 +1399,19 @@ export class TaskDetailsProvider {
 
     <div class="edit-form" id="periodicity-edit-form">
         <div class="edit-form-group">
-            <label class="edit-form-label">Periodicity</label>
-            <div class="edit-periodicity-group">
-                <input type="number" id="periodicity-edit-value" class="edit-form-input" value="${task.periodicity.value}" min="1">
-                <select id="periodicity-edit-unit" class="edit-form-select">
-                    <option value="days" ${task.periodicity.unit === 'days' ? 'selected' : ''}>Days</option>
-                    <option value="weeks" ${task.periodicity.unit === 'weeks' ? 'selected' : ''}>Weeks</option>
-                    <option value="months" ${task.periodicity.unit === 'months' ? 'selected' : ''}>Months</option>
-                    <option value="years" ${task.periodicity.unit === 'years' ? 'selected' : ''}>Years</option>
-                </select>
-            </div>
+            <label class="edit-form-label">Periodicity Type</label>
+            <select id="periodicity-type" class="edit-form-select" onchange="handlePeriodicityTypeChange()">
+                <option value="none" ${task.periodicity.type === 'none' ? 'selected' : ''}>One-shot (no recurrence)</option>
+                <option value="daily" ${task.periodicity.type === 'daily' ? 'selected' : ''}>Daily</option>
+                <option value="weekly" ${task.periodicity.type === 'weekly' ? 'selected' : ''}>Weekly</option>
+                <option value="monthly" ${task.periodicity.type === 'monthly' ? 'selected' : ''}>Monthly</option>
+                <option value="yearly" ${task.periodicity.type === 'yearly' ? 'selected' : ''}>Yearly</option>
+                <option value="custom" ${task.periodicity.type === 'custom' ? 'selected' : ''}>Custom interval</option>
+            </select>
+        </div>
+        <div class="edit-form-group" id="custom-interval-group" style="display: ${task.periodicity.type === 'custom' ? 'block' : 'none'};">
+            <label class="edit-form-label">Custom Interval (days)</label>
+            <input type="number" id="periodicity-interval" class="edit-form-input" value="${task.periodicity.interval || 1}" min="1">
         </div>
         <div class="edit-form-actions">
             <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditPeriodicity()">Cancel</button>
@@ -1432,7 +1436,10 @@ export class TaskDetailsProvider {
             Validate Task
         </div>
         <div class="validate-task-description">
-            Mark this task as complete and set the next due date based on the periodicity.
+            ${!task.periodicity.isRecurring || task.periodicity.type === 'none'
+                ? 'Mark this task as complete. One-shot tasks will be automatically archived after validation.'
+                : 'Mark this task as complete and set the next due date based on the periodicity.'
+            }
         </div>
         <div class="add-comment-section">
             <textarea class="add-comment-textarea" id="validate-comment-textarea" placeholder="Add a validation comment (optional)..."></textarea>
@@ -1619,23 +1626,61 @@ export class TaskDetailsProvider {
 
         function cancelEditPeriodicity() {
             document.getElementById('periodicity-edit-form').classList.remove('show');
-            document.getElementById('periodicity-edit-value').value = '${task.periodicity.value}';
-            document.getElementById('periodicity-edit-unit').value = '${task.periodicity.unit}';
+            document.getElementById('periodicity-type').value = '${task.periodicity.type}';
+            document.getElementById('periodicity-interval').value = '${task.periodicity.interval || 1}';
+            handlePeriodicityTypeChange();
+        }
+
+        function handlePeriodicityTypeChange() {
+            const typeSelect = document.getElementById('periodicity-type');
+            const customGroup = document.getElementById('custom-interval-group');
+            
+            if (typeSelect.value === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
         }
 
         function saveTaskPeriodicity() {
-            const newValue = parseInt(document.getElementById('periodicity-edit-value').value);
-            const newUnit = document.getElementById('periodicity-edit-unit').value;
+            const newType = document.getElementById('periodicity-type').value;
+            const newInterval = parseInt(document.getElementById('periodicity-interval').value) || 1;
             
-            if (newValue && newUnit) {
+            if (newType) {
+                const periodicityData = {
+                    type: newType,
+                    isRecurring: newType !== 'none'
+                };
+
+                if (newType === 'custom') {
+                    periodicityData.interval = newInterval;
+                    periodicityData.description = 'Every ' + newInterval + ' days';
+                } else {
+                    // Set description based on type
+                    switch (newType) {
+                        case 'none':
+                            periodicityData.description = 'One-shot task';
+                            break;
+                        case 'daily':
+                            periodicityData.description = 'Daily';
+                            break;
+                        case 'weekly':
+                            periodicityData.description = 'Weekly';
+                            break;
+                        case 'monthly':
+                            periodicityData.description = 'Monthly';
+                            break;
+                        case 'yearly':
+                            periodicityData.description = 'Yearly';
+                            break;
+                    }
+                }
+
                 vscode.postMessage({
                     command: 'updateTask',
                     taskId: taskId,
                     taskData: { 
-                        periodicity: {
-                            value: newValue,
-                            unit: newUnit
-                        }
+                        periodicity: periodicityData
                     }
                 });
                 document.getElementById('periodicity-edit-form').classList.remove('show');
@@ -1926,17 +1971,24 @@ export class TaskDetailsProvider {
 
         <div class="form-group">
             <label class="form-label">Periodicity <span class="required">*</span></label>
-            <div class="periodicity-group">
-                <input type="number" id="periodicity-value" class="form-input" min="1" required placeholder="Value">
-                <select id="periodicity-unit" class="form-select" required>
-                    <option value="">Unit</option>
-                    <option value="days">Days</option>
-                    <option value="weeks">Weeks</option>
-                    <option value="months">Months</option>
-                    <option value="years">Years</option>
-                </select>
-            </div>
-            <div class="error-message" id="periodicity-error">Please enter valid periodicity</div>
+            <select id="periodicity-type" class="form-select" required onchange="handlePeriodicityTypeChange()">
+                <option value="">Select periodicity type</option>
+                <option value="none">One-shot (no recurrence)</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="custom">Custom interval</option>
+            </select>
+            <div class="error-message" id="periodicity-error">Please select a periodicity type</div>
+        </div>
+
+        <div class="form-group" id="custom-interval-group" style="display: none;">
+            <label class="form-label" for="custom-interval">
+                Custom Interval (days) <span class="required">*</span>
+            </label>
+            <input type="number" id="custom-interval" class="form-input" min="1" placeholder="Number of days">
+            <div class="error-message" id="custom-interval-error">Please enter a valid number of days</div>
         </div>
 
         <div class="form-group">
@@ -1973,11 +2025,22 @@ export class TaskDetailsProvider {
             createTask();
         });
         
+        function handlePeriodicityTypeChange() {
+            const typeSelect = document.getElementById('periodicity-type');
+            const customGroup = document.getElementById('custom-interval-group');
+            
+            if (typeSelect.value === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+
         function createTask() {
             const title = document.getElementById('task-title').value.trim();
             const description = document.getElementById('task-description').value.trim();
-            const periodicityValue = parseInt(document.getElementById('periodicity-value').value);
-            const periodicityUnit = document.getElementById('periodicity-unit').value;
+            const periodicityType = document.getElementById('periodicity-type').value;
+            const customInterval = parseInt(document.getElementById('custom-interval').value);
             const startDate = document.getElementById('start-date').value;
             
             // Validation
@@ -1997,11 +2060,21 @@ export class TaskDetailsProvider {
                 hideError('description-error');
             }
             
-            if (!periodicityValue || !periodicityUnit) {
-                showError('periodicity-error', 'Please enter valid periodicity');
+            if (!periodicityType) {
+                showError('periodicity-error', 'Please select a periodicity type');
                 isValid = false;
             } else {
                 hideError('periodicity-error');
+            }
+
+            // Validate custom interval if custom type is selected
+            if (periodicityType === 'custom') {
+                if (!customInterval || customInterval < 1) {
+                    showError('custom-interval-error', 'Please enter a valid number of days');
+                    isValid = false;
+                } else {
+                    hideError('custom-interval-error');
+                }
             }
             
             if (!startDate) {
@@ -2014,14 +2087,41 @@ export class TaskDetailsProvider {
             if (!isValid) {
                 return;
             }
+
+            // Create periodicity object based on new format
+            const periodicityData = {
+                type: periodicityType,
+                isRecurring: periodicityType !== 'none'
+            };
+
+            if (periodicityType === 'custom') {
+                periodicityData.interval = customInterval;
+                periodicityData.description = 'Every ' + customInterval + ' days';
+            } else {
+                // Set description based on type
+                switch (periodicityType) {
+                    case 'none':
+                        periodicityData.description = 'One-shot task';
+                        break;
+                    case 'daily':
+                        periodicityData.description = 'Daily';
+                        break;
+                    case 'weekly':
+                        periodicityData.description = 'Weekly';
+                        break;
+                    case 'monthly':
+                        periodicityData.description = 'Monthly';
+                        break;
+                    case 'yearly':
+                        periodicityData.description = 'Yearly';
+                        break;
+                }
+            }
             
             const taskData = {
                 title: title,
                 description: description,
-                periodicity: {
-                    value: periodicityValue,
-                    unit: periodicityUnit
-                },
+                periodicity: periodicityData,
                 startDate: new Date(startDate).toISOString()
             };
             

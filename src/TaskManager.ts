@@ -1,4 +1,4 @@
-import { Task, Periodicity, Comment } from './Task';
+import { Task, Periodicity, Comment, PeriodicityHelper } from './Task';
 import { StorageManager } from './StorageManager';
 
 /**
@@ -19,11 +19,18 @@ export class TaskManager {
     private loadTasks(): void {
         this.tasks = this.storageManager.getTasks();
         
-        // Migrate existing tasks that don't have the status property
+        // Migrate existing tasks
         let hasChanges = false;
         this.tasks.forEach(task => {
+            // Migrate status property if missing
             if (!task.hasOwnProperty('status')) {
                 task.status = 'active';
+                hasChanges = true;
+            }
+            
+            // Migrate periodicity to new format if it's in old format
+            if (task.periodicity && 'unit' in task.periodicity) {
+                task.periodicity = PeriodicityHelper.migrateOldPeriodicity(task.periodicity);
                 hasChanges = true;
             }
             
@@ -69,24 +76,7 @@ export class TaskManager {
      * Calculates the next due date based on periodicity
      */
     private calculateNextDueDate(currentDueDate: Date, periodicity: Periodicity): Date {
-        const nextDate = new Date();
-        
-        switch (periodicity.unit) {
-            case 'days':
-                nextDate.setDate(nextDate.getDate() + periodicity.value);
-                break;
-            case 'weeks':
-                nextDate.setDate(nextDate.getDate() + (periodicity.value * 7));
-                break;
-            case 'months':
-                nextDate.setMonth(nextDate.getMonth() + periodicity.value);
-                break;
-            case 'years':
-                nextDate.setFullYear(nextDate.getFullYear() + periodicity.value);
-                break;
-        }
-        
-        return nextDate;
+        return PeriodicityHelper.calculateNextDueDate(currentDueDate, periodicity);
     }
 
     /**
@@ -142,8 +132,13 @@ export class TaskManager {
         
         task.comments.push(comment);
         
-        // Calculate the next due date based on periodicity
-        task.dueDate = this.calculateNextDueDate(task.dueDate, task.periodicity);
+        // Handle non-recurring tasks differently - archive them after validation
+        if (!task.periodicity.isRecurring || task.periodicity.type === 'none') {
+            task.status = 'archived';
+        } else {
+            // Calculate the next due date based on periodicity for recurring tasks
+            task.dueDate = this.calculateNextDueDate(task.dueDate, task.periodicity);
+        }
         
         this.saveTasks();
         

@@ -240,7 +240,7 @@ export class JiraService {
                                                 content: [
                                                     {
                                                         type: 'text',
-                                                        text: `Periodicity: Every ${task.periodicity.value} ${task.periodicity.unit}`
+                                                        text: `Periodicity: ${task.periodicity.description}`
                                                     }
                                                 ]
                                             }
@@ -424,4 +424,4 @@ export class JiraService {
 
         return fetch(url, options);
     }
-} 
+}
