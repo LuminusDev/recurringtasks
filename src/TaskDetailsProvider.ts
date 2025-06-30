@@ -399,6 +399,19 @@ export class TaskDetailsProvider {
     }
 
     /**
+     * Escapes a string for safe insertion into JavaScript
+     */
+    private static escapeForJavaScript(str: string): string {
+        return str
+            .replace(/\\/g, '\\\\')  // Escape backslashes first
+            .replace(/'/g, "\\'")    // Escape single quotes
+            .replace(/"/g, '\\"')    // Escape double quotes
+            .replace(/\n/g, '\\n')   // Escape newlines
+            .replace(/\r/g, '\\r')   // Escape carriage returns
+            .replace(/\t/g, '\\t');  // Escape tabs
+    }
+
+    /**
      * Generates the HTML content for the webview
      */
     private static getWebviewContent(task: Task, webview: vscode.Webview, extensionUri: vscode.Uri): string {
@@ -1320,7 +1333,7 @@ export class TaskDetailsProvider {
                 <div class="edit-form" id="title-edit-form">
                     <div class="edit-form-group">
                         <label class="edit-form-label">Task Title</label>
-                        <input type="text" id="title-edit-input" class="edit-form-input" value="${task.title}">
+                        <input type="text" id="title-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForJavaScript(task.title)}">
                     </div>
                     <div class="edit-form-actions">
                         <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">Cancel</button>
@@ -1335,7 +1348,7 @@ export class TaskDetailsProvider {
                 <div class="edit-form" id="description-edit-form">
                     <div class="edit-form-group">
                         <label class="edit-form-label">Task Description</label>
-                        <textarea id="description-edit-textarea" class="edit-form-textarea">${task.description}</textarea>
+                        <textarea id="description-edit-textarea" class="edit-form-textarea">${TaskDetailsProvider.escapeForJavaScript(task.description)}</textarea>
                     </div>
                     <div class="edit-form-actions">
                         <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">Cancel</button>
@@ -1417,7 +1430,7 @@ export class TaskDetailsProvider {
         </div>
         <div class="edit-form-group" id="custom-interval-group" style="display: ${task.periodicity.type === 'custom' ? 'block' : 'none'};">
             <label class="edit-form-label">Custom Interval (days)</label>
-            <input type="number" id="periodicity-interval" class="edit-form-input" value="${task.periodicity.interval || 1}" min="1">
+            <input type="number" id="periodicity-interval" class="edit-form-input" value="${TaskDetailsProvider.escapeForJavaScript(String(task.periodicity.interval || 1))}">
         </div>
         <div class="edit-form-actions">
             <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditPeriodicity()">Cancel</button>
@@ -1428,7 +1441,7 @@ export class TaskDetailsProvider {
     <div class="edit-form" id="due-date-edit-form">
         <div class="edit-form-group">
             <label class="edit-form-label">Next Due Date</label>
-            <input type="datetime-local" id="due-date-edit-input" class="edit-form-input" value="${task.dueDate.toISOString().slice(0, 16)}">
+            <input type="datetime-local" id="due-date-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForJavaScript(task.dueDate.toISOString().slice(0, 16))}">
         </div>
         <div class="edit-form-actions">
             <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDueDate()">Cancel</button>
@@ -1486,7 +1499,7 @@ export class TaskDetailsProvider {
 
     <script>
         const vscode = acquireVsCodeApi();
-        const taskId = '${task.id}';
+        const taskId = '${TaskDetailsProvider.escapeForJavaScript(task.id)}';
         
         // Add comment functionality
         function addComment() {
@@ -1587,7 +1600,7 @@ export class TaskDetailsProvider {
 
         function cancelEditTitle() {
             document.getElementById('title-edit-form').classList.remove('show');
-            document.getElementById('title-edit-input').value = '${task.title}';
+            document.getElementById('title-edit-input').value = '${TaskDetailsProvider.escapeForJavaScript(task.title)}';
         }
 
         function saveTaskTitle() {
@@ -1610,7 +1623,7 @@ export class TaskDetailsProvider {
 
         function cancelEditDescription() {
             document.getElementById('description-edit-form').classList.remove('show');
-            document.getElementById('description-edit-textarea').value = '${task.description}';
+            document.getElementById('description-edit-textarea').value = '${TaskDetailsProvider.escapeForJavaScript(task.description)}';
         }
 
         function saveTaskDescription() {
@@ -1632,8 +1645,8 @@ export class TaskDetailsProvider {
 
         function cancelEditPeriodicity() {
             document.getElementById('periodicity-edit-form').classList.remove('show');
-            document.getElementById('periodicity-type').value = '${task.periodicity.type}';
-            document.getElementById('periodicity-interval').value = '${task.periodicity.interval || 1}';
+            document.getElementById('periodicity-type').value = '${TaskDetailsProvider.escapeForJavaScript(task.periodicity.type)}';
+            document.getElementById('periodicity-interval').value = '${TaskDetailsProvider.escapeForJavaScript(String(task.periodicity.interval || 1))}';
             handlePeriodicityTypeChange();
         }
 
@@ -1758,7 +1771,7 @@ export class TaskDetailsProvider {
         function cancelEditDueDate() {
             document.getElementById('due-date-edit-form').classList.remove('show');
             // Reset to original value
-            document.getElementById('due-date-edit-input').value = '${task.dueDate.toISOString().slice(0, 16)}';
+            document.getElementById('due-date-edit-input').value = '${TaskDetailsProvider.escapeForJavaScript(task.dueDate.toISOString().slice(0, 16))}';
         }
 
         function saveTaskDueDate() {

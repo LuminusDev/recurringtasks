@@ -321,10 +321,10 @@
   dependencies:
     undici-types "~6.21.0"
 
-"@types/vscode@^1.101.0":
+"@types/vscode@^1.93.0":
   version "1.101.0"
   resolved "http://bdxsvn001.intraxiti.com:8082/npm/AT_NPM/@types/vscode/-/vscode-1.101.0.tgz#0622ca26ea15aafbe570dc4d25917c75cafe578a"
-  integrity sha512-ZWf0IWa+NGegdW3iU42AcDTFHWW7fApLdkdnBqwYEtHVIBGbTu0ZNQKP/kX3Ds/uMJXIMQNAojHR4vexCEEz5Q==
+  integrity sha1-BiLKJuoVqvvlcNxNJZF8dcr+V4o=
 
 "@typescript-eslint/eslint-plugin@^8.31.1":
   version "8.35.0"
