@@ -38,7 +38,7 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
   - Task title and description
   - Current status and time remaining
   - Periodicity information
-  - Start date and next due date
+  - Creation date and next due date
   - Complete comment history with timestamps
 
 ### Adding a Task
@@ -48,7 +48,7 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
    - Task title
    - Description
    - Periodicity (value and unit: days, weeks, months, years, or "One Shot")
-   - Start date and time
+   - Next due date and time
 3. Click "Create Task" to save
 
 **One Shot Tasks**: Tasks with "One Shot" periodicity have no recurrence and are automatically archived when validated. These are perfect for one-time tasks that don't need to repeat.
@@ -126,7 +126,7 @@ You can create JIRA issues directly from your tasks with all task details automa
 4. **The JIRA issue will be created** with:
    - **Summary**: Task title
    - **Description**: Task description plus recurring task details
-   - **Task metadata**: Periodicity, due date, and start date
+   - **Task metadata**: Periodicity, due date, and creation date
    - **Assignee**: Automatically assigned to you (if enabled)
 
 #### Setting Up JIRA Integration

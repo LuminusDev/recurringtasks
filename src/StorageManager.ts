@@ -22,7 +22,7 @@ export class StorageManager {
         // Convert date strings back to Date objects and ensure comments have IDs
         return storedTasks.map(task => ({
             ...task,
-            startDate: new Date(task.startDate),
+            creationDate: new Date(task.creationDate),
             dueDate: new Date(task.dueDate),
             comments: task.comments.map(comment => ({
                 ...comment,

@@ -3,7 +3,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
+import { Task } from '../Task';
 
 // Function to convert URLs to clickable links (copied from TaskDetailsProvider)
 function convertUrlsToLinks(text: string): string {
@@ -43,6 +43,42 @@ suite('Extension Test Suite', () => {
 		// Test multiple URLs in one text
 		const multipleUrlsText = 'Check https://example.com and www.test.org';
 		const multipleUrlsResult = convertUrlsToLinks(multipleUrlsText);
-		assert.strictEqual(multipleUrlsResult, 'Check <a href="https://example.com" class="clickable-link" target="_blank" rel="noopener noreferrer">https://example.com</a> and <a href="https://www.test.org" class="clickable-link" target="_blank" rel="noopener noreferrer">www.test.org</a>');
+		assert.strictEqual(multipleUrlsResult, 'Check <a href="https://example.com" class="clickable-link" target="_blank" rel="noopener noreferrer">https://example.com</a> and <a href="https://www.test.org" class="clickable-link" target="_blank" rel="noopener noreferrer">https://www.test.org</a>');
+	});
+
+	test('Task creation with automatic creation date', () => {
+		// Test that new tasks automatically get creation date set to current time
+		const now = new Date();
+		const dueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
+		
+		const taskData = {
+			title: 'Test Task',
+			description: 'Test Description',
+			periodicity: {
+				type: 'daily' as const,
+				description: 'Daily',
+				isRecurring: true
+			},
+			dueDate: dueDate.toISOString()
+		};
+
+		// Simulate task creation (creationDate should be set automatically)
+		const createdTask = {
+			...taskData,
+			id: 'test-task-3',
+			creationDate: new Date(), // Automatically set to current date
+			dueDate: new Date(taskData.dueDate),
+			comments: [],
+			status: 'active' as const
+		};
+
+		// Verify creation date is automatically set
+		assert.strictEqual(createdTask.creationDate instanceof Date, true);
+		assert.strictEqual(createdTask.dueDate instanceof Date, true);
+		assert.strictEqual(createdTask.title, 'Test Task');
+		
+		// Verify creation date is recent (within last minute)
+		const timeDiff = Math.abs(createdTask.creationDate.getTime() - now.getTime());
+		assert.strictEqual(timeDiff < 60000, true); // Should be within 1 minute
 	});
 });

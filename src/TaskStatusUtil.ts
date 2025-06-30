@@ -40,17 +40,17 @@ export class TaskStatusUtil {
         const now = new Date();
         const dueDate = task.dueDate;
         
-        // For one-shot tasks, calculate progress from start date to due date
+        // For one-shot tasks, calculate progress from creation date to due date
         if (!task.periodicity.isRecurring || task.periodicity.type === 'none') {
-            const startDate = task.startDate;
+            const creationDate = task.creationDate;
             
             // If the task is overdue, return 100% progress
             if (now > dueDate) {
                 return 100;
             }
             
-            const totalDuration = dueDate.getTime() - startDate.getTime();
-            const elapsed = now.getTime() - startDate.getTime();
+            const totalDuration = dueDate.getTime() - creationDate.getTime();
+            const elapsed = now.getTime() - creationDate.getTime();
             
             // Ensure progress is between 0 and 100
             const progress = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
@@ -58,7 +58,7 @@ export class TaskStatusUtil {
         }
         
         // For recurring tasks, calculate progress based on the current period
-        // Find the start of the current period (previous due date or start date)
+        // Find the start of the current period (previous due date or creation date)
         const currentPeriodStart = TaskStatusUtil.getCurrentPeriodStart(task);
         
         // Calculate progress based on position within the current period
@@ -77,9 +77,9 @@ export class TaskStatusUtil {
         const periodicity = task.periodicity;
         const dueDate = task.dueDate;
         
-        // For one-shot tasks, use the start date as the period start
+        // For one-shot tasks, use the creation date as the period start
         if (!periodicity.isRecurring || periodicity.type === 'none') {
-            return new Date(task.startDate);
+            return new Date(task.creationDate);
         }
         
         // Calculate the start of the current period by subtracting the periodicity

@@ -89,14 +89,14 @@ export class TaskManager {
     /**
      * Adds a new task
      */
-    addTask(title: string, description: string, periodicity: Periodicity, startDate: Date): Task {
+    addTask(title: string, description: string, periodicity: Periodicity, dueDate: Date): Task {
         const newTask: Task = {
             id: this.generateId(),
             title,
             description,
             periodicity,
-            startDate,
-            dueDate: new Date(startDate), // Initial due date is the same as start date
+            creationDate: new Date(), // Automatically set to current date
+            dueDate: new Date(dueDate), // Use the provided due date
             comments: [],
             status: 'active'
         };

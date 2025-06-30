@@ -50,7 +50,7 @@ export interface Task {
     /** The periodicity/recurrence pattern of the task */
     periodicity: Periodicity;
     /** The date when the task was first created */
-    startDate: Date;
+    creationDate: Date;
     /** The date when the next occurrence of the task is due */
     dueDate: Date;
     /** History of comments/validations for this task */

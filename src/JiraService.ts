@@ -268,7 +268,7 @@ export class JiraService {
                                                 content: [
                                                     {
                                                         type: 'text',
-                                                        text: `Start Date: ${task.startDate.toLocaleDateString()}`
+                                                        text: `Creation Date: ${task.creationDate.toLocaleDateString()}`
                                                     }
                                                 ]
                                             }

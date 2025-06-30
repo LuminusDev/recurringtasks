@@ -244,9 +244,9 @@ export class TaskDetailsProvider {
         }
 
         try {
-            const { title, description, periodicity, startDate } = taskData;
+            const { title, description, periodicity, dueDate } = taskData;
             
-            if (!title || !description || !periodicity || !startDate) {
+            if (!title || !description || !periodicity || !dueDate) {
                 vscode.window.showErrorMessage('Missing required task data');
                 return;
             }
@@ -255,7 +255,7 @@ export class TaskDetailsProvider {
                 title,
                 description,
                 periodicity,
-                new Date(startDate)
+                new Date(dueDate)
             );
 
             if (newTask) {
@@ -291,8 +291,8 @@ export class TaskDetailsProvider {
                 processedTaskData.dueDate = new Date(processedTaskData.dueDate);
             }
             
-            if (processedTaskData.startDate && typeof processedTaskData.startDate === 'string') {
-                processedTaskData.startDate = new Date(processedTaskData.startDate);
+            if (processedTaskData.creationDate && typeof processedTaskData.creationDate === 'string') {
+                processedTaskData.creationDate = new Date(processedTaskData.creationDate);
             }
 
             const updatedTask = TaskDetailsProvider.taskManager.updateTask(taskId, processedTaskData);
@@ -1378,7 +1378,13 @@ export class TaskDetailsProvider {
                 <div class="compact-meta-item">
                     <span class="meta-icon">⏰</span>
                     <span class="meta-info">
-                        <span id="due-date-display">Due ${formatDate(task.dueDate)}</span>
+                        <span id="due-date-display">
+                            Due ${formatDate(task.dueDate)}
+                            ${!task.periodicity.isRecurring || task.periodicity.type === 'none' 
+                                ? ` (created ${formatDate(task.creationDate)})` 
+                                : ''
+                            }
+                        </span>
                         <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="Edit due date"></button>
                     </span>
                 </div>
@@ -1774,6 +1780,12 @@ export class TaskDetailsProvider {
                 taskId: taskId
             });
         }
+
+        // Set default due date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const localDateTime = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('due-date').value = localDateTime;
     </script>
 </body>
 </html>`;
@@ -1861,7 +1873,6 @@ export class TaskDetailsProvider {
             color: var(--vscode-input-foreground);
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
-            resize: vertical;
         }
 
         .form-textarea:focus {
@@ -1992,11 +2003,11 @@ export class TaskDetailsProvider {
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="start-date">
-                Start Date <span class="required">*</span>
+            <label class="form-label" for="due-date">
+                Next Due Date <span class="required">*</span>
             </label>
-            <input type="datetime-local" id="start-date" class="form-input" required>
-            <div class="error-message" id="start-date-error">Please select a start date</div>
+            <input type="datetime-local" id="due-date" class="form-input" required>
+            <div class="error-message" id="due-date-error">Please select a due date</div>
         </div>
 
         <div class="form-actions">
@@ -2014,10 +2025,11 @@ export class TaskDetailsProvider {
     <script>
         const vscode = acquireVsCodeApi();
         
-        // Set default start date to now
-        const now = new Date();
-        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        document.getElementById('start-date').value = localDateTime;
+        // Set default due date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const localDateTime = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('due-date').value = localDateTime;
         
         // Form submission
         document.getElementById('create-task-form').addEventListener('submit', function(e) {
@@ -2041,7 +2053,7 @@ export class TaskDetailsProvider {
             const description = document.getElementById('task-description').value.trim();
             const periodicityType = document.getElementById('periodicity-type').value;
             const customInterval = parseInt(document.getElementById('custom-interval').value);
-            const startDate = document.getElementById('start-date').value;
+            const dueDate = document.getElementById('due-date').value;
             
             // Validation
             let isValid = true;
@@ -2077,11 +2089,11 @@ export class TaskDetailsProvider {
                 }
             }
             
-            if (!startDate) {
-                showError('start-date-error', 'Please select a start date');
+            if (!dueDate) {
+                showError('due-date-error', 'Please select a due date');
                 isValid = false;
             } else {
-                hideError('start-date-error');
+                hideError('due-date-error');
             }
             
             if (!isValid) {
@@ -2122,7 +2134,8 @@ export class TaskDetailsProvider {
                 title: title,
                 description: description,
                 periodicity: periodicityData,
-                startDate: new Date(startDate).toISOString()
+                creationDate: new Date().toISOString(), // Automatically set to current date
+                dueDate: new Date(dueDate).toISOString()
             };
             
             vscode.postMessage({

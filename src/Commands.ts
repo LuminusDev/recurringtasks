@@ -588,7 +588,7 @@ You can set these in VS Code Settings (Ctrl+,) under "Recurring Tasks > Jira".
                 const result = await this.jiraService.testConnection();
                 
                 progress.report({ increment: 100, message: 'Done!' });
-
+                
                 if (result.success) {
                     vscode.window.showInformationMessage(`✅ JIRA Connection Successful!\n${result.message}`);
                 } else {
