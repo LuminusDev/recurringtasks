@@ -671,7 +671,7 @@ You can set these in VS Code Settings (Ctrl+,) under "Recurring Tasks > Jira".
                     </style>
                 </head>
                 <body>
-                    <pre>${instructions}</pre>
+                    <pre>${instructions.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
                 </body>
                 </html>
             `;

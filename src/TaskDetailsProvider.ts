@@ -460,13 +460,36 @@ export class TaskDetailsProvider {
      * Escapes a string for safe insertion into JavaScript
      */
     private static escapeForJavaScript(str: string): string {
+        if (typeof str !== 'string') {
+            return '';
+        }
+        
         return str
-            .replace(/\\/g, '\\\\')  // Escape backslashes first
-            .replace(/'/g, "\\'")    // Escape single quotes
-            .replace(/"/g, '\\"')    // Escape double quotes
-            .replace(/\n/g, '\\n')   // Escape newlines
-            .replace(/\r/g, '\\r')   // Escape carriage returns
-            .replace(/\t/g, '\\t');  // Escape tabs
+            .replace(/\\/g, '\\\\')      // Escape backslashes first
+            .replace(/'/g, "\\'")        // Escape single quotes
+            .replace(/"/g, '\\"')        // Escape double quotes
+            .replace(/\n/g, '\\n')       // Escape newlines
+            .replace(/\r/g, '\\r')       // Escape carriage returns
+            .replace(/\t/g, '\\t')       // Escape tabs
+            .replace(/\f/g, '\\f')       // Escape form feeds
+            .replace(/\v/g, '\\v')       // Escape vertical tabs
+            .replace(/\b/g, '\\b')       // Escape backspace
+            .replace(/\0/g, '\\0')       // Escape null bytes
+            .replace(/</g, '\\u003C')    // Escape < to prevent HTML injection
+            .replace(/>/g, '\\u003E')    // Escape > to prevent HTML injection
+            .replace(/&/g, '\\u0026');   // Escape & to prevent HTML injection
+    }
+
+    /**
+     * Escapes a string for safe insertion into HTML
+     */
+    private static escapeForHtml(str: string): string {
+        return str
+            .replace(/&/g, '&amp;')   // Escape ampersands first
+            .replace(/</g, '&lt;')    // Escape less than
+            .replace(/>/g, '&gt;')    // Escape greater than
+            .replace(/"/g, '&quot;')  // Escape double quotes
+            .replace(/'/g, '&#39;');  // Escape single quotes
     }
 
     /**
@@ -497,9 +520,12 @@ export class TaskDetailsProvider {
 
         // Function to convert URLs to clickable links
         const convertUrlsToLinks = (text: string): string => {
+            // First escape the text to prevent XSS
+            const escapedText = TaskDetailsProvider.escapeForHtml(text);
+            
             // URL regex pattern that matches http, https, ftp, and www URLs
             const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|ftp:\/\/[^\s]+)/gi;
-            return text.replace(urlRegex, (url) => {
+            return escapedText.replace(urlRegex, (url) => {
                 // Ensure URLs have a protocol
                 const fullUrl = url.startsWith('www.') ? 'https://' + url : url;
                 return `<a href="${fullUrl}" class="clickable-link" target="_blank" rel="noopener noreferrer">${url}</a>`;
@@ -654,7 +680,7 @@ export class TaskDetailsProvider {
                     </div>
                     <div class="comment-content" id="comment-content-${comment.id}">${convertUrlsToLinks(comment.text)}</div>
                     <div class="comment-edit-form" id="comment-edit-${comment.id}" style="display: none;">
-                        <textarea class="comment-edit-textarea" id="comment-edit-textarea-${comment.id}">${comment.text}</textarea>
+                        <textarea class="comment-edit-textarea" id="comment-edit-textarea-${comment.id}">${TaskDetailsProvider.escapeForHtml(comment.text)}</textarea>
                         <div class="comment-edit-actions">
                             <button class="save-comment-btn" onclick="saveComment('${comment.id}')">
                                 <span class="codicon codicon-check"></span>
@@ -1469,13 +1495,13 @@ export class TaskDetailsProvider {
             <div class="task-header-main">
                 <div class="task-title">
                     <span class="task-icon ${getStatusClass()}">${getStatusClass() === 'overdue' ? '🔴' : getStatusClass() === 'due-soon' ? '🟡' : '✅'}</span>
-                    <span id="task-title-display">${task.title}</span>
+                    <span id="task-title-display">${TaskDetailsProvider.escapeForHtml(task.title)}</span>
                     <button class="edit-btn codicon codicon-edit" onclick="editTaskTitle()" title="Edit task title"></button>
                 </div>
                 <div class="edit-form" id="title-edit-form">
                     <div class="edit-form-group">
                         <label class="edit-form-label">Task Title</label>
-                        <input type="text" id="title-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForJavaScript(task.title)}">
+                        <input type="text" id="title-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForHtml(task.title)}">
                     </div>
                     <div class="edit-form-actions">
                         <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">Cancel</button>
@@ -1490,7 +1516,7 @@ export class TaskDetailsProvider {
                 <div class="edit-form" id="description-edit-form">
                     <div class="edit-form-group">
                         <label class="edit-form-label">Task Description</label>
-                        <textarea id="description-edit-textarea" class="edit-form-textarea">${TaskDetailsProvider.escapeForJavaScript(task.description)}</textarea>
+                        <textarea id="description-edit-textarea" class="edit-form-textarea">${TaskDetailsProvider.escapeForHtml(task.description)}</textarea>
                     </div>
                     <div class="edit-form-actions">
                         <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">Cancel</button>
@@ -1516,7 +1542,7 @@ export class TaskDetailsProvider {
         </div>
         <div class="time-progress">
             <div class="status-progress-header">
-                <div class="status-badge ${getStatusInfo().class}">${getStatusInfo().name}</div>
+                <div class="status-badge ${getStatusInfo().class}">${TaskDetailsProvider.escapeForHtml(getStatusInfo().name)}</div>
                 <div class="progress-percentage">${TaskStatusUtil.getTimeProgress(task)}% Complete</div>
             </div>
             
@@ -1525,7 +1551,7 @@ export class TaskDetailsProvider {
                     <span class="meta-icon">🔄</span>
                     <span class="meta-info">
                         <span id="periodicity-display">
-                            <span class="periodicity-value">${formatPeriodicity(task.periodicity)}</span>
+                            <span class="periodicity-value">${TaskDetailsProvider.escapeForHtml(formatPeriodicity(task.periodicity))}</span>
                         </span>
                         <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="Edit periodicity"></button>
                     </span>
@@ -1547,7 +1573,7 @@ export class TaskDetailsProvider {
                     <span class="meta-icon">🔔</span>
                     <span class="meta-info">
                         <span id="notification-display" class="${getNotificationInfo().canReceiveNotifications ? 'notification-active' : 'notification-disabled'}">
-                            ${getNotificationInfo().message}
+                            ${TaskDetailsProvider.escapeForHtml(getNotificationInfo().message)}
                             ${getNotificationInfo().hasState && getNotificationInfo().lastNotificationTime 
                                 ? `<br><small>Last: ${formatDate(getNotificationInfo().lastNotificationTime)}</small>` 
                                 : ''
@@ -1565,7 +1591,7 @@ export class TaskDetailsProvider {
                 <div class="time-circle ${getStatusClass()}">${TaskStatusUtil.getTimeProgress(task)}%</div>
                 <div class="time-details">
                     <div class="time-label">Time Remaining</div>
-                    <div class="time-value">${getStatusInfo().timeRemaining}</div>
+                    <div class="time-value">${TaskDetailsProvider.escapeForHtml(getStatusInfo().timeRemaining)}</div>
                 </div>
             </div>
             <div class="progress-bar">
@@ -1588,7 +1614,7 @@ export class TaskDetailsProvider {
         </div>
         <div class="edit-form-group" id="custom-interval-group" style="display: ${task.periodicity.type === 'custom' ? 'block' : 'none'};">
             <label class="edit-form-label">Custom Interval (days)</label>
-            <input type="number" id="periodicity-interval" class="edit-form-input" value="${TaskDetailsProvider.escapeForJavaScript(String(task.periodicity.interval || 1))}">
+            <input type="number" id="periodicity-interval" class="edit-form-input" value="${TaskDetailsProvider.escapeForHtml(String(task.periodicity.interval || 1))}">
         </div>
         <div class="edit-form-actions">
             <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditPeriodicity()">Cancel</button>
@@ -1599,7 +1625,7 @@ export class TaskDetailsProvider {
     <div class="edit-form" id="due-date-edit-form">
         <div class="edit-form-group">
             <label class="edit-form-label">Next Due Date</label>
-            <input type="datetime-local" id="due-date-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForJavaScript(task.dueDate.toISOString().slice(0, 16))}">
+            <input type="datetime-local" id="due-date-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForHtml(task.dueDate.toISOString().slice(0, 16))}">
         </div>
         <div class="edit-form-actions">
             <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDueDate()">Cancel</button>
@@ -1657,7 +1683,7 @@ export class TaskDetailsProvider {
 
     <script>
         const vscode = acquireVsCodeApi();
-        const taskId = '${TaskDetailsProvider.escapeForJavaScript(task.id)}';
+        const taskId = '${task.id}';
         
         // Add comment functionality
         function addComment() {
