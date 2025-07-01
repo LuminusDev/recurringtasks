@@ -652,13 +652,17 @@ You can set these in VS Code Settings (Ctrl+,) under "Recurring Tasks > Jira".
                 'jiraConfig',
                 'JIRA Configuration Instructions',
                 vscode.ViewColumn.One,
-                { enableScripts: false }
+                { 
+                    enableScripts: false,
+                    localResourceRoots: [this.extensionUri]
+                }
             );
 
             panel.webview.html = `
                 <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'none'; img-src 'self' data: https:; connect-src 'none';">
                     <style>
                         body { font-family: var(--vscode-font-family); padding: 20px; }
                         h1 { color: var(--vscode-editor-foreground); }
