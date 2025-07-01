@@ -401,22 +401,83 @@ export class Commands {
      */
     private async getSelectedTask(): Promise<TaskTreeItem | undefined> {
         try {
-            // For now, let's get the first available task as a fallback
-            // In a more sophisticated implementation, we would get the actually selected task
-            const tasks = this.taskManager.getTasks();
-            if (tasks.length > 0) {
-                // Create a TaskTreeItem from the first task
-                return {
-                    task: tasks[0],
-                    label: tasks[0].title,
-                    collapsibleState: vscode.TreeItemCollapsibleState.None
-                } as TaskTreeItem;
-            }
-
-            return undefined;
+            // Since VS Code doesn't provide direct access to tree view selection,
+            // we'll show a task picker to let the user choose the task they want to work with
+            // This provides a better user experience than guessing or using the first task
+            return await this.showTaskPicker();
         } catch (error) {
             console.error('Error getting selected task:', error);
+            return this.getFirstAvailableTask();
+        }
+    }
+
+    /**
+     * Shows a task picker to let the user choose a task
+     */
+    private async showTaskPicker(): Promise<TaskTreeItem | undefined> {
+        const tasks = this.taskManager.getTasks();
+        
+        if (tasks.length === 0) {
+            vscode.window.showInformationMessage('No active tasks available.');
             return undefined;
+        }
+
+        // Create picker items with task information
+        const taskItems = tasks.map(task => ({
+            label: task.title,
+            description: task.description,
+            detail: `Due: ${task.dueDate.toLocaleDateString()} - ${this.getTaskStatusText(task)}`,
+            task: task
+        }));
+
+        const selectedItem = await vscode.window.showQuickPick(taskItems, {
+            placeHolder: 'Select a task to perform the action on',
+            canPickMany: false
+        });
+
+        if (!selectedItem) {
+            return undefined;
+        }
+
+        // Create a TaskTreeItem from the selected task
+        return {
+            task: selectedItem.task,
+            label: selectedItem.task.title,
+            collapsibleState: vscode.TreeItemCollapsibleState.None
+        } as TaskTreeItem;
+    }
+
+    /**
+     * Gets the first available task as a fallback
+     */
+    private getFirstAvailableTask(): TaskTreeItem | undefined {
+        const tasks = this.taskManager.getTasks();
+        if (tasks.length > 0) {
+            return {
+                task: tasks[0],
+                label: tasks[0].title,
+                collapsibleState: vscode.TreeItemCollapsibleState.None
+            } as TaskTreeItem;
+        }
+        return undefined;
+    }
+
+    /**
+     * Gets a human-readable status text for a task
+     */
+    private getTaskStatusText(task: any): string {
+        const now = new Date();
+        const isOverdue = task.dueDate < now;
+        const isDueToday = task.dueDate.toDateString() === now.toDateString();
+        
+        if (isOverdue) {
+            const daysOverdue = Math.floor((now.getTime() - task.dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            return `Overdue by ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''}`;
+        } else if (isDueToday) {
+            return 'Due today';
+        } else {
+            const daysUntilDue = Math.floor((task.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            return `Due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`;
         }
     }
 
