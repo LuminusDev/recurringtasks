@@ -207,6 +207,115 @@ The exported JSON includes:
 - **Recovery**: Restore tasks from a previous export
 - **Testing**: Import sample tasks for testing purposes
 
+### Smart Notification System
+
+The RecurringTasks extension includes a comprehensive notification system that helps you stay on top of your tasks without being overwhelmed.
+
+#### How Notifications Work
+
+- **Automatic Checks**: The system checks for due/overdue tasks every 30 minutes
+- **Smart Throttling**: Notifications are intelligently throttled based on your frequency settings
+- **Task Status Awareness**: Only active tasks receive notifications (archived tasks are ignored)
+- **Real-time Updates**: Notification states are immediately reflected in the task details view
+
+#### Notification Actions
+
+When a notification appears, you have several options:
+
+1. **Validate Task**: Mark the task as complete with an optional comment
+2. **Show Details**: Open the task details view to see full information
+3. **Snooze**: Temporarily suppress notifications for this task
+4. **Disable Notifications**: Turn off all notifications globally
+
+#### Smart Snooze Duration
+
+The snooze duration automatically adapts to your notification frequency:
+
+- **Immediate frequency**: Snooze for 30 minutes
+- **Hourly frequency**: Snooze for 2 hours (longer than frequency for effectiveness)
+- **Daily frequency**: Snooze for 6 hours
+- **Disabled frequency**: Snooze for 24 hours
+
+This ensures that snoozing is always meaningful and gives you appropriate time to handle tasks.
+
+#### Notification Settings
+
+Configure your notification preferences in VS Code settings:
+
+1. **Open Settings**: Press `Ctrl+,` and search for "Recurring Tasks Notifications"
+2. **Configure options**:
+   - **Enabled**: Turn notifications on/off globally
+   - **Frequency**: Choose how often notifications can appear
+   - **Show Overdue Only**: Only notify about overdue tasks
+   - **Max Notifications Per Task**: Limit notifications per task to avoid spam
+
+#### Notification Frequency Options
+
+- **Immediate**: Show notifications as soon as tasks become due/overdue
+- **Hourly**: Show at most once per hour (default)
+- **Daily**: Show at most once per day
+- **Disabled**: Never show notifications
+
+#### Managing Notification States
+
+##### Viewing Notification State
+
+- **Task Details View**: Open any task to see its current notification state
+- **Real-time Updates**: The notification state updates automatically when notifications are shown, snoozed, or reactivated
+
+##### Reactivating Notifications
+
+If a task has reached its maximum notifications or been snoozed, you can reactivate notifications:
+
+1. **Right-click on task** in the sidebar
+2. **Select "Recurring Tasks: Reactivate Notifications"**
+3. **Or use Command Palette**: Press `Ctrl+Shift+P` and type "Recurring Tasks: Reactivate Notifications"
+
+##### Notification Statistics
+
+The system tracks notification statistics including:
+
+- Total active tasks
+- Tasks with notification states
+- Overdue tasks with notifications
+- Current notification settings
+
+#### Notification Commands
+
+Access notification management through the Command Palette (`Ctrl+Shift+P`):
+
+- **"Recurring Tasks: Check Notifications Now"**: Manually trigger a notification check
+- **"Recurring Tasks: Reset Notification States"**: Clear all notification states (useful for testing)
+- **"Recurring Tasks: Notification Settings"**: Open notification settings directly
+
+#### Notification Best Practices
+
+- **Start with Hourly**: The default hourly frequency provides good balance
+- **Use Snooze Wisely**: Snooze when you need time to handle a task
+- **Reactivate When Ready**: Reactivate notifications when you're ready to receive them again
+- **Monitor in Task Details**: Check the notification state in task details for full visibility
+- **Adjust Frequency**: Change frequency based on your workflow and task urgency
+
+#### Troubleshooting Notifications
+
+**Notifications not appearing?**
+
+- Check if notifications are enabled in settings
+- Verify the task is active (not archived)
+- Check if the task has reached maximum notifications
+- Ensure the task is actually due/overdue
+
+**Too many notifications?**
+
+- Increase the frequency setting (e.g., from hourly to daily)
+- Enable "Show Overdue Only" to reduce notification volume
+- Use snooze to temporarily suppress specific tasks
+
+**Need immediate notifications?**
+
+- Set frequency to "Immediate" for instant notifications
+- Use "Check Notifications Now" command for manual checks
+
 ### Deleting a Task
 
 1. Right-click on a task in the sidebar
@@ -278,22 +387,34 @@ This extension includes the following configuration options:
   - **Default**: true
   - **Scope**: Global
 
+### Notification Settings
+
+- **`recurringTasks.notifications.enabled`**: Enable or disable all task notifications
+
+  - **Options**: true/false
+  - **Default**: true
+  - **Scope**: Global
+
+- **`recurringTasks.notifications.frequency`**: How often notifications can appear for the same task
+
+  - **Options**: "immediate", "hourly", "daily", "disabled"
+  - **Default**: "hourly"
+  - **Scope**: Global
+
+- **`recurringTasks.notifications.showOverdueOnly`**: Only show notifications for overdue tasks
+
+  - **Options**: true/false
+  - **Default**: false
+  - **Scope**: Global
+
+- **`recurringTasks.notifications.maxNotificationsPerTask`**: Maximum number of notifications per task
+  - **Options**: 1-50
+  - **Default**: 5
+  - **Scope**: Global
+
 ## Known Issues
 
 None at this time.
-
-## Release Notes
-
-### 1.0.0
-
-Initial release of RecurringTasks extension with the following features:
-
-- Create recurring tasks with custom periodicity
-- Visual task management in VS Code sidebar
-- Task validation with automatic next due date calculation
-- Persistent storage of tasks
-- Smart time remaining display
-- Visual status indicators for task urgency
 
 ---
 

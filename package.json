@@ -85,6 +85,40 @@
           "minimum": 1,
           "maximum": 10000,
           "description": "Maximum number of projects to fetch from JIRA (for large instances)"
+        },
+        "recurringTasks.notifications.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable task notifications for due and overdue tasks"
+        },
+        "recurringTasks.notifications.frequency": {
+          "type": "string",
+          "enum": [
+            "immediate",
+            "hourly",
+            "daily",
+            "disabled"
+          ],
+          "default": "hourly",
+          "description": "How often to show notifications for the same task",
+          "enumDescriptions": [
+            "Show immediately when task becomes due/overdue",
+            "Show at most once per hour per task",
+            "Show at most once per day per task",
+            "Never show notifications"
+          ]
+        },
+        "recurringTasks.notifications.showOverdueOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Only show notifications for overdue tasks, not tasks due today"
+        },
+        "recurringTasks.notifications.maxNotificationsPerTask": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum number of notifications to show per task before stopping"
         }
       }
     },
@@ -176,6 +210,26 @@
         "command": "recurringtasks.importTasks",
         "title": "Recurring Tasks: Import Tasks",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "recurringtasks.checkNotifications",
+        "title": "Recurring Tasks: Check Notifications Now",
+        "icon": "$(bell)"
+      },
+      {
+        "command": "recurringtasks.resetNotifications",
+        "title": "Recurring Tasks: Reset Notification States",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "recurringtasks.notificationSettings",
+        "title": "Recurring Tasks: Notification Settings",
+        "icon": "$(bell-dot)"
+      },
+      {
+        "command": "recurringtasks.reactivateNotifications",
+        "title": "Recurring Tasks: Reactivate Notifications",
+        "icon": "$(bell-ring)"
       }
     ],
     "menus": {
@@ -199,6 +253,16 @@
           "command": "recurringtasks.importTasks",
           "when": "view == recurringTasks.view",
           "group": "1_export"
+        },
+        {
+          "command": "recurringtasks.notificationSettings",
+          "when": "view == recurringTasks.view",
+          "group": "2_settings"
+        },
+        {
+          "command": "recurringtasks.checkNotifications",
+          "when": "view == recurringTasks.view",
+          "group": "2_settings"
         }
       ],
       "view/item/context": [
@@ -229,6 +293,11 @@
         },
         {
           "command": "recurringtasks.createJiraIssue",
+          "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
+          "group": "1_modify"
+        },
+        {
+          "command": "recurringtasks.reactivateNotifications",
           "when": "view == recurringTasks.view && viewItem != 'archived' && viewItem != 'category'",
           "group": "1_modify"
         }

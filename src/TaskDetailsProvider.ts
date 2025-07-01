@@ -3,6 +3,7 @@ import { Task, Comment } from './Task';
 import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
 import { TaskStatusUtil } from './TaskStatusUtil';
+import { NotificationManager } from './NotificationManager';
 
 /**
  * Provides task details and comments in a webview panel
@@ -10,8 +11,10 @@ import { TaskStatusUtil } from './TaskStatusUtil';
 export class TaskDetailsProvider {
     private static readonly viewType = 'recurringTasks.taskDetails';
     private static currentPanel: vscode.WebviewPanel | undefined;
+    private static currentTaskId: string | undefined;
     private static taskManager: TaskManager;
     private static taskProvider: TaskProvider;
+    private static notificationManager: NotificationManager;
 
     /**
      * Sets the task manager instance
@@ -28,9 +31,19 @@ export class TaskDetailsProvider {
     }
 
     /**
+     * Sets the notification manager instance
+     */
+    public static setNotificationManager(notificationManager: NotificationManager): void {
+        TaskDetailsProvider.notificationManager = notificationManager;
+    }
+
+    /**
      * Shows task details in a webview panel, reusing existing panel if available
      */
     public static showTaskDetails(task: Task, extensionUri: vscode.Uri): void {
+        // Store the current task ID
+        TaskDetailsProvider.currentTaskId = task.id;
+        
         // If we have an existing panel, reuse it
         if (TaskDetailsProvider.currentPanel) {
             TaskDetailsProvider.currentPanel.reveal(vscode.ViewColumn.One);
@@ -92,6 +105,9 @@ export class TaskDetailsProvider {
                     case 'createMeeting':
                         TaskDetailsProvider.handleCreateMeeting(message.taskId);
                         return;
+                    case 'reactivateNotifications':
+                        TaskDetailsProvider.handleReactivateNotifications(message.taskId);
+                        return;
                 }
             },
             undefined,
@@ -101,6 +117,7 @@ export class TaskDetailsProvider {
         // Clean up when the panel is disposed
         panel.onDidDispose(() => {
             TaskDetailsProvider.currentPanel = undefined;
+            TaskDetailsProvider.currentTaskId = undefined;
         }, null);
     }
 
@@ -151,6 +168,7 @@ export class TaskDetailsProvider {
         // Clean up when the panel is disposed
         panel.onDidDispose(() => {
             TaskDetailsProvider.currentPanel = undefined;
+            TaskDetailsProvider.currentTaskId = undefined;
         }, null);
     }
 
@@ -375,10 +393,35 @@ export class TaskDetailsProvider {
     }
 
     /**
+     * Handles reactivating notifications for a task
+     */
+    private static async handleReactivateNotifications(taskId: string): Promise<void> {
+        try {
+            if (!TaskDetailsProvider.notificationManager) {
+                vscode.window.showErrorMessage('Notification manager not available');
+                return;
+            }
+
+            await TaskDetailsProvider.notificationManager.reactivateNotificationsForTask(taskId);
+            
+            // Refresh the panel to show updated notification state
+            const task = TaskDetailsProvider.taskManager.getTasks().find(t => t.id === taskId);
+            if (task) {
+                TaskDetailsProvider.refreshPanel(task);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to reactivate notifications: ${error}`);
+        }
+    }
+
+    /**
      * Refreshes the panel with updated task data
      */
     private static refreshPanel(task: Task): void {
         if (TaskDetailsProvider.currentPanel) {
+            // Update the current task ID
+            TaskDetailsProvider.currentTaskId = task.id;
+            
             TaskDetailsProvider.currentPanel.title = `Task: ${task.title}`;
             TaskDetailsProvider.currentPanel.webview.html = TaskDetailsProvider.getWebviewContent(
                 task, 
@@ -395,6 +438,19 @@ export class TaskDetailsProvider {
         if (TaskDetailsProvider.taskProvider && TaskDetailsProvider.taskManager) {
             const tasks = TaskDetailsProvider.taskManager.getTasks();
             TaskDetailsProvider.taskProvider.refresh();
+        }
+    }
+
+    /**
+     * Refreshes the webview when notification settings change
+     */
+    public static refreshWebviewForNotificationChange(): void {
+        if (TaskDetailsProvider.currentPanel && TaskDetailsProvider.taskManager && TaskDetailsProvider.currentTaskId) {
+            // Find the task by ID
+            const task = TaskDetailsProvider.taskManager.getTasks().find(t => t.id === TaskDetailsProvider.currentTaskId);
+            if (task) {
+                TaskDetailsProvider.refreshPanel(task);
+            }
         }
     }
 
@@ -510,6 +566,75 @@ export class TaskDetailsProvider {
                     };
                 }
             }
+        };
+
+        const getNotificationInfo = () => {
+            if (!TaskDetailsProvider.notificationManager) {
+                return {
+                    hasState: false,
+                    notificationCount: 0,
+                    lastNotificationTime: null,
+                    isOverdue: false,
+                    canReceiveNotifications: true,
+                    message: 'Notification manager not available'
+                };
+            }
+
+            const stats = TaskDetailsProvider.notificationManager.getNotificationStats();
+            const settings = stats.settings;
+            
+            // Check if notifications are globally disabled
+            if (!settings.enabled) {
+                return {
+                    hasState: false,
+                    notificationCount: 0,
+                    lastNotificationTime: null,
+                    isOverdue: false,
+                    canReceiveNotifications: false,
+                    message: 'Notifications are globally disabled'
+                };
+            }
+
+            // Check if frequency is disabled
+            if (settings.frequency === 'disabled') {
+                return {
+                    hasState: false,
+                    notificationCount: 0,
+                    lastNotificationTime: null,
+                    isOverdue: false,
+                    canReceiveNotifications: false,
+                    message: 'Notifications are disabled (frequency setting)'
+                };
+            }
+
+            // Get notification state for this specific task
+            const notificationStates = (TaskDetailsProvider.notificationManager as any).notificationStates;
+            const taskState = notificationStates.get(task.id);
+            
+            if (!taskState) {
+                return {
+                    hasState: false,
+                    notificationCount: 0,
+                    lastNotificationTime: null,
+                    isOverdue: false,
+                    canReceiveNotifications: true,
+                    message: 'No notification state (notifications are active)'
+                };
+            }
+
+            // Check if max notifications reached
+            const maxReached = taskState.notificationCount >= settings.maxNotificationsPerTask;
+            
+            return {
+                hasState: true,
+                notificationCount: taskState.notificationCount,
+                lastNotificationTime: taskState.lastNotificationTime,
+                isOverdue: taskState.isOverdue,
+                canReceiveNotifications: !maxReached,
+                message: maxReached 
+                    ? `Maximum notifications reached (${taskState.notificationCount}/${settings.maxNotificationsPerTask})`
+                    : `Notifications active (${taskState.notificationCount}/${settings.maxNotificationsPerTask})`
+            };
         };
 
         const commentsHtml = task.comments.length > 0 
@@ -658,6 +783,20 @@ export class TaskDetailsProvider {
         .status-badge.normal {
             background-color: var(--vscode-activityBarBadge-background);
             color: var(--vscode-activityBarBadge-foreground);
+        }
+
+        .notification-active {
+            color: var(--vscode-foreground);
+        }
+
+        .notification-disabled {
+            color: var(--vscode-descriptionForeground);
+            opacity: 0.7;
+        }
+
+        .notification-display small {
+            font-size: 0.8em;
+            opacity: 0.8;
         }
 
         .comments-section {
@@ -1401,6 +1540,22 @@ export class TaskDetailsProvider {
                         <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="Edit due date"></button>
                     </span>
                 </div>
+                <div class="compact-meta-item">
+                    <span class="meta-icon">🔔</span>
+                    <span class="meta-info">
+                        <span id="notification-display" class="${getNotificationInfo().canReceiveNotifications ? 'notification-active' : 'notification-disabled'}">
+                            ${getNotificationInfo().message}
+                            ${getNotificationInfo().hasState && getNotificationInfo().lastNotificationTime 
+                                ? `<br><small>Last: ${formatDate(getNotificationInfo().lastNotificationTime)}</small>` 
+                                : ''
+                            }
+                        </span>
+                        ${getNotificationInfo().hasState ? 
+                            `<button class="edit-btn codicon codicon-refresh" onclick="reactivateNotifications()" title="Reactivate notifications"></button>` 
+                            : ''
+                        }
+                    </span>
+                </div>
             </div>
             
             <div class="time-visual">
@@ -1790,6 +1945,14 @@ export class TaskDetailsProvider {
         function createMeeting() {
             vscode.postMessage({
                 command: 'createMeeting',
+                taskId: taskId
+            });
+        }
+
+        // Reactivate notifications functionality
+        function reactivateNotifications() {
+            vscode.postMessage({
+                command: 'reactivateNotifications',
                 taskId: taskId
             });
         }

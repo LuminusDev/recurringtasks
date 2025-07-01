@@ -8,12 +8,14 @@ import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
 import { TaskDetailsProvider } from './TaskDetailsProvider';
 import { Commands } from './Commands';
+import { NotificationManager } from './NotificationManager';
 
 // Global variables to maintain references
 let taskProvider: TaskProvider;
 let taskManager: TaskManager;
 let storageManager: StorageManager;
 let commands: Commands;
+let notificationManager: NotificationManager;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -36,8 +38,14 @@ export function activate(context: vscode.ExtensionContext) {
 		// Set the task provider in the TaskDetailsProvider for refreshing the sidebar
 		TaskDetailsProvider.setTaskProvider(taskProvider);
 		
-		// Initialize commands with task manager and provider
-		commands = new Commands(taskManager, taskProvider, context.extensionUri);
+		// Initialize the notification manager
+		notificationManager = new NotificationManager(taskManager, taskProvider, context);
+		
+		// Set the notification manager in the TaskDetailsProvider for notification state display
+		TaskDetailsProvider.setNotificationManager(notificationManager);
+		
+		// Initialize commands with task manager, provider, and notification manager
+		commands = new Commands(taskManager, taskProvider, context.extensionUri, notificationManager);
 		
 		// Register the tree view
 		const treeView = vscode.window.createTreeView('recurringTasks.view', {
@@ -46,6 +54,19 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		// Register all commands
 		commands.registerCommands(context);
+		
+		// Register notification commands
+		context.subscriptions.push(
+			vscode.commands.registerCommand('recurringtasks.checkNotifications', () => {
+				notificationManager.checkNow();
+			}),
+			vscode.commands.registerCommand('recurringtasks.resetNotifications', () => {
+				notificationManager.resetNotificationStates();
+			}),
+			vscode.commands.registerCommand('recurringtasks.notificationSettings', () => {
+				vscode.commands.executeCommand('workbench.action.openSettings', 'recurringTasks.notifications');
+			})
+		);
 		
 		// Initial refresh of the view
 		taskProvider.refresh();
@@ -58,9 +79,6 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		// Add the tree view to subscriptions
 		context.subscriptions.push(treeView);
-		
-		// Show activation message
-		vscode.window.showInformationMessage('RecurringTasks extension activated! Use the sidebar to manage your tasks.');
 		
 		console.log('RecurringTasks extension initialized successfully');
 		
@@ -77,5 +95,10 @@ export function deactivate() {
 	// Clean up any resources if needed
 	if (taskProvider) {
 		taskProvider.refresh();
+	}
+	
+	// Clean up notification manager
+	if (notificationManager) {
+		notificationManager.dispose();
 	}
 }

@@ -5,6 +5,7 @@ import { TaskTreeItem } from './TaskProvider';
 import { Periodicity } from './Task';
 import { TaskDetailsProvider } from './TaskDetailsProvider';
 import { JiraService } from './JiraService';
+import { NotificationManager } from './NotificationManager';
 
 /**
  * Handles all command implementations for the recurring tasks extension
@@ -14,12 +15,14 @@ export class Commands {
     private taskProvider: TaskProvider;
     private extensionUri: vscode.Uri;
     private jiraService: JiraService;
+    private notificationManager: NotificationManager;
 
-    constructor(taskManager: TaskManager, taskProvider: TaskProvider, extensionUri: vscode.Uri) {
+    constructor(taskManager: TaskManager, taskProvider: TaskProvider, extensionUri: vscode.Uri, notificationManager: NotificationManager) {
         this.taskManager = taskManager;
         this.taskProvider = taskProvider;
         this.extensionUri = extensionUri;
         this.jiraService = new JiraService();
+        this.notificationManager = notificationManager;
     }
 
     /**
@@ -116,6 +119,27 @@ export class Commands {
             this.importTasks();
         });
 
+        // Reactivate Notifications command
+        const reactivateNotificationsCommand = vscode.commands.registerCommand('recurringtasks.reactivateNotifications', async (item?: TaskTreeItem) => {
+            // If no item provided (e.g., called via keybinding), try to get selected task
+            if (!item) {
+                const selectedTask = await this.getSelectedTask();
+                if (selectedTask) {
+                    this.reactivateNotifications(selectedTask);
+                } else {
+                    vscode.window.showWarningMessage('Please select a task first to reactivate notifications.');
+                }
+            } else {
+                this.reactivateNotifications(item);
+            }
+        });
+
+        // Refresh Webview for Notification Changes command
+        const refreshWebviewCommand = vscode.commands.registerCommand('recurringtasks.refreshWebviewForNotifications', () => {
+            const { TaskDetailsProvider } = require('./TaskDetailsProvider');
+            TaskDetailsProvider.refreshWebviewForNotificationChange();
+        });
+
         // Add all commands to subscriptions
         context.subscriptions.push(
             addTaskCommand,
@@ -131,7 +155,9 @@ export class Commands {
             configureJiraCommand,
             testJiraConnectionCommand,
             exportTasksCommand,
-            importTasksCommand
+            importTasksCommand,
+            reactivateNotificationsCommand,
+            refreshWebviewCommand
         );
     }
 
@@ -249,6 +275,17 @@ export class Commands {
      */
     private refreshTasks(): void {
         this.taskProvider.refresh();
+    }
+
+    /**
+     * Handles reactivating notifications for a task
+     */
+    private async reactivateNotifications(item: TaskTreeItem): Promise<void> {
+        try {
+            await this.notificationManager.reactivateNotificationsForTask(item.task.id);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to reactivate notifications: ${error}`);
+        }
     }
 
     /**
