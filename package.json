@@ -119,6 +119,16 @@
           "minimum": 1,
           "maximum": 50,
           "description": "Maximum number of notifications to show per task before stopping"
+        },
+        "recurringTasks.calendar.firstDayOfWeek": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "sunday",
+            "monday"
+          ],
+          "default": "auto",
+          "description": "First day of the week in the calendar view. 'auto' uses the user's locale setting."
         }
       }
     },
@@ -138,6 +148,13 @@
           "name": "Tasks",
           "icon": "$(tasklist)",
           "contextualTitle": "Recurring Tasks"
+        },
+        {
+          "id": "recurringTasks.calendar",
+          "name": "Calendar",
+          "type": "webview",
+          "icon": "$(calendar)",
+          "contextualTitle": "Tasks Calendar"
         }
       ]
     },
@@ -230,6 +247,16 @@
         "command": "recurringtasks.reactivateNotifications",
         "title": "Recurring Tasks: Reactivate Notifications",
         "icon": "$(bell-ring)"
+      },
+      {
+        "command": "recurringtasks.showCalendar",
+        "title": "Recurring Tasks: Show Calendar View",
+        "icon": "$(calendar)"
+      },
+      {
+        "command": "recurringtasks.setFirstDayOfWeek",
+        "title": "Recurring Tasks: Set First Day of Week",
+        "icon": "$(gear)"
       }
     ],
     "menus": {
@@ -263,6 +290,11 @@
           "command": "recurringtasks.checkNotifications",
           "when": "view == recurringTasks.view",
           "group": "2_settings"
+        },
+        {
+          "command": "recurringtasks.showCalendar",
+          "when": "view == recurringTasks.view",
+          "group": "3_actions"
         }
       ],
       "view/item/context": [

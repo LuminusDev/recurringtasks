@@ -216,7 +216,7 @@ export class JiraService {
                                 content: [
                                     {
                                         type: 'text',
-                                        text: task.description
+                                        text: task.description || ''
                                     }
                                 ]
                             },

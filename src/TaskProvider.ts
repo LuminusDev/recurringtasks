@@ -14,7 +14,7 @@ export class TaskTreeItem extends vscode.TreeItem {
     ) {
         super(task.title, collapsibleState);
         
-        this.tooltip = `${task.title} - ${task.description}`;
+        this.tooltip = task.description ? `${task.title} - ${task.description}` : task.title;
         if (contextValue !== 'archived') {
             this.description = TaskStatusUtil.getComprehensiveStatus(task);
         }

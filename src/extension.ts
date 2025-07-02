@@ -6,12 +6,14 @@ import * as vscode from 'vscode';
 import { StorageManager } from './StorageManager';
 import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
+import { CalendarProvider } from './CalendarProvider';
 import { TaskDetailsProvider } from './TaskDetailsProvider';
 import { Commands } from './Commands';
 import { NotificationManager } from './NotificationManager';
 
 // Global variables to maintain references
 let taskProvider: TaskProvider;
+let calendarProvider: CalendarProvider;
 let taskManager: TaskManager;
 let storageManager: StorageManager;
 let commands: Commands;
@@ -35,22 +37,34 @@ export function activate(context: vscode.ExtensionContext) {
 		// Initialize the task provider
 		taskProvider = new TaskProvider(taskManager);
 		
+		// Initialize the calendar provider
+		calendarProvider = new CalendarProvider(context.extensionUri, taskManager);
+		
 		// Set the task provider in the TaskDetailsProvider for refreshing the sidebar
 		TaskDetailsProvider.setTaskProvider(taskProvider);
 		
+		// Set the calendar provider in the TaskDetailsProvider for refreshing the calendar
+		TaskDetailsProvider.setCalendarProvider(calendarProvider);
+		
 		// Initialize the notification manager
-		notificationManager = new NotificationManager(taskManager, taskProvider, context);
+		notificationManager = new NotificationManager(taskManager, taskProvider, calendarProvider, context);
 		
 		// Set the notification manager in the TaskDetailsProvider for notification state display
 		TaskDetailsProvider.setNotificationManager(notificationManager);
 		
-		// Initialize commands with task manager, provider, and notification manager
-		commands = new Commands(taskManager, taskProvider, context.extensionUri, notificationManager);
+		// Initialize commands with task manager, providers, and notification manager
+		commands = new Commands(taskManager, taskProvider, calendarProvider, context.extensionUri, notificationManager);
 		
 		// Register the tree view
 		const treeView = vscode.window.createTreeView('recurringTasks.view', {
 			treeDataProvider: taskProvider
 		});
+
+		// Register the calendar webview provider
+		const calendarWebview = vscode.window.registerWebviewViewProvider(
+			CalendarProvider.viewType,
+			calendarProvider
+		);
 		
 		// Register all commands
 		commands.registerCommands(context);
@@ -65,20 +79,17 @@ export function activate(context: vscode.ExtensionContext) {
 			}),
 			vscode.commands.registerCommand('recurringtasks.notificationSettings', () => {
 				vscode.commands.executeCommand('workbench.action.openSettings', 'recurringTasks.notifications');
+			}),
+			vscode.commands.registerCommand('recurringtasks.showCalendar', () => {
+				vscode.commands.executeCommand('recurringTasks.calendar.focus');
 			})
 		);
 		
-		// Initial refresh of the view
 		taskProvider.refresh();
+		calendarProvider.refresh();
 		
-		// Set up event listener for task updates
-		// This ensures the view refreshes when tasks change
-		const updateView = () => {
-			taskProvider.refresh();
-		};
-		
-		// Add the tree view to subscriptions
-		context.subscriptions.push(treeView);
+		// Add the tree view and calendar webview to subscriptions
+		context.subscriptions.push(treeView, calendarWebview);
 		
 		console.log('RecurringTasks extension initialized successfully');
 		

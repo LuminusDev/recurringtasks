@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Task, Comment } from './Task';
 import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
+import { CalendarProvider } from './CalendarProvider';
 import { TaskStatusUtil } from './TaskStatusUtil';
 import { NotificationManager } from './NotificationManager';
 
@@ -14,6 +15,7 @@ export class TaskDetailsProvider {
     private static currentTaskId: string | undefined;
     private static taskManager: TaskManager;
     private static taskProvider: TaskProvider;
+    private static calendarProvider: CalendarProvider;
     private static notificationManager: NotificationManager;
 
     /**
@@ -35,6 +37,13 @@ export class TaskDetailsProvider {
      */
     public static setNotificationManager(notificationManager: NotificationManager): void {
         TaskDetailsProvider.notificationManager = notificationManager;
+    }
+
+    /**
+     * Sets the calendar provider instance
+     */
+    public static setCalendarProvider(calendarProvider: CalendarProvider): void {
+        TaskDetailsProvider.calendarProvider = calendarProvider;
     }
 
     /**
@@ -266,16 +275,16 @@ export class TaskDetailsProvider {
         try {
             const { title, description, periodicity, dueDate } = taskData;
             
-            if (!title || !description || !periodicity || !dueDate) {
+            if (!title || !periodicity || !dueDate) {
                 vscode.window.showErrorMessage('Missing required task data');
                 return;
             }
 
             const newTask = TaskDetailsProvider.taskManager.addTask(
                 title,
-                description,
                 periodicity,
-                new Date(dueDate)
+                new Date(dueDate),
+                description
             );
 
             if (newTask) {
@@ -434,12 +443,15 @@ export class TaskDetailsProvider {
     }
 
     /**
-     * Refreshes the task provider
+     * Refreshes the task provider and calendar
      */
     private static refreshTaskProvider(): void {
         if (TaskDetailsProvider.taskProvider && TaskDetailsProvider.taskManager) {
             const tasks = TaskDetailsProvider.taskManager.getTasks();
             TaskDetailsProvider.taskProvider.refresh();
+        }
+        if (TaskDetailsProvider.calendarProvider) {
+            TaskDetailsProvider.calendarProvider.refresh();
         }
     }
 
@@ -496,8 +508,11 @@ export class TaskDetailsProvider {
      * Generates the HTML content for the webview
      */
     private static getWebviewContent(task: Task, webview: vscode.Webview, extensionUri: vscode.Uri): string {
+        // Get user's locale from VS Code
+        const userLocale = vscode.env.language || 'en-US';
+        
         const formatDate = (date: Date) => {
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleDateString(userLocale) + ' ' + date.toLocaleTimeString(userLocale, { hour: '2-digit', minute: '2-digit' });
         };
 
         const formatPeriodicity = (periodicity: any) => {
@@ -1510,13 +1525,13 @@ export class TaskDetailsProvider {
                 </div>
                 
                 <div class="task-description">
-                    <span id="task-description-display">${convertUrlsToLinks(task.description)}</span>
+                    <span id="task-description-display">${task.description ? convertUrlsToLinks(task.description) : '<em>No description</em>'}</span>
                     <button class="edit-btn codicon codicon-edit" onclick="editTaskDescription()" title="Edit task description"></button>
                 </div>
                 <div class="edit-form" id="description-edit-form">
                     <div class="edit-form-group">
                         <label class="edit-form-label">Task Description</label>
-                        <textarea id="description-edit-textarea" class="edit-form-textarea">${TaskDetailsProvider.escapeForHtml(task.description)}</textarea>
+                        <textarea id="description-edit-textarea" class="edit-form-textarea">${TaskDetailsProvider.escapeForHtml(task.description || '')}</textarea>
                     </div>
                     <div class="edit-form-actions">
                         <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">Cancel</button>
@@ -1807,19 +1822,16 @@ export class TaskDetailsProvider {
 
         function cancelEditDescription() {
             document.getElementById('description-edit-form').classList.remove('show');
-            document.getElementById('description-edit-textarea').value = '${TaskDetailsProvider.escapeForJavaScript(task.description)}';
         }
 
         function saveTaskDescription() {
             const newDescription = document.getElementById('description-edit-textarea').value.trim();
-            if (newDescription) {
-                vscode.postMessage({
-                    command: 'updateTask',
-                    taskId: taskId,
-                    taskData: { description: newDescription }
-                });
-                document.getElementById('description-edit-form').classList.remove('show');
-            }
+            vscode.postMessage({
+                command: 'updateTask',
+                taskId: taskId,
+                taskData: { description: newDescription || '' }
+            });
+            document.getElementById('description-edit-form').classList.remove('show');
         }
 
         // Edit task periodicity functionality
@@ -2174,9 +2186,9 @@ export class TaskDetailsProvider {
 
         <div class="form-group">
             <label class="form-label" for="task-description">
-                Description <span class="required">*</span>
+                Description
             </label>
-            <textarea id="task-description" class="form-textarea" required placeholder="Enter task description"></textarea>
+            <textarea id="task-description" class="form-textarea" placeholder="Enter task description (optional)"></textarea>
             <div class="error-message" id="description-error">Please enter a task description</div>
         </div>
 
@@ -2265,12 +2277,8 @@ export class TaskDetailsProvider {
                 hideError('title-error');
             }
             
-            if (!description) {
-                showError('description-error', 'Please enter a task description');
-                isValid = false;
-            } else {
-                hideError('description-error');
-            }
+            // Description is optional, so no validation needed
+            hideError('description-error');
             
             if (!periodicityType) {
                 showError('periodicity-error', 'Please select a periodicity type');
@@ -2332,7 +2340,7 @@ export class TaskDetailsProvider {
             
             const taskData = {
                 title: title,
-                description: description,
+                description: description || undefined, // Convert empty string to undefined
                 periodicity: periodicityData,
                 creationDate: new Date().toISOString(), // Automatically set to current date
                 dueDate: new Date(dueDate).toISOString()

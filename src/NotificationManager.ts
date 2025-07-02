@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Task } from './Task';
 import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
+import { CalendarProvider } from './CalendarProvider';
 
 /**
  * Notification frequency options
@@ -28,14 +29,16 @@ interface TaskNotificationState {
 export class NotificationManager {
     private taskManager: TaskManager;
     private taskProvider: TaskProvider;
+    private calendarProvider: CalendarProvider;
     private context: vscode.ExtensionContext;
     private notificationStates: Map<string, TaskNotificationState> = new Map();
     private checkInterval: NodeJS.Timeout | undefined;
     private readonly CHECK_INTERVAL_MS = 30 * 60 * 1000; // Check every 30 minutes
 
-    constructor(taskManager: TaskManager, taskProvider: TaskProvider, context: vscode.ExtensionContext) {
+    constructor(taskManager: TaskManager, taskProvider: TaskProvider, calendarProvider: CalendarProvider, context: vscode.ExtensionContext) {
         this.taskManager = taskManager;
         this.taskProvider = taskProvider;
+        this.calendarProvider = calendarProvider;
         this.context = context;
         this.loadNotificationStates();
         this.startPeriodicCheck();
@@ -251,6 +254,7 @@ export class NotificationManager {
         
         this.taskManager.validateTask(task.id, comment || '');
         this.taskProvider.refresh();
+        this.calendarProvider.refresh();
         
         // Remove from notification states since task is validated
         this.notificationStates.delete(task.id);
@@ -482,6 +486,7 @@ export class NotificationManager {
         // This will be called when notification settings change
         // The TaskDetailsProvider can listen for this and refresh the webview
         this.taskProvider.refresh();
+        this.calendarProvider.refresh();
     }
 
     /**

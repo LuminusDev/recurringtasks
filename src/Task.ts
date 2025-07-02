@@ -46,7 +46,7 @@ export interface Task {
     /** The title/name of the task */
     title: string;
     /** Detailed description of the task */
-    description: string;
+    description?: string;
     /** The periodicity/recurrence pattern of the task */
     periodicity: Periodicity;
     /** The date when the task was first created */

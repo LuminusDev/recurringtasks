@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { TaskManager } from './TaskManager';
 import { TaskProvider } from './TaskProvider';
+import { CalendarProvider } from './CalendarProvider';
 import { TaskTreeItem } from './TaskProvider';
-import { Periodicity } from './Task';
 import { TaskDetailsProvider } from './TaskDetailsProvider';
 import { JiraService } from './JiraService';
 import { NotificationManager } from './NotificationManager';
@@ -13,13 +13,15 @@ import { NotificationManager } from './NotificationManager';
 export class Commands {
     private taskManager: TaskManager;
     private taskProvider: TaskProvider;
+    private calendarProvider: CalendarProvider;
     private extensionUri: vscode.Uri;
     private jiraService: JiraService;
     private notificationManager: NotificationManager;
 
-    constructor(taskManager: TaskManager, taskProvider: TaskProvider, extensionUri: vscode.Uri, notificationManager: NotificationManager) {
+    constructor(taskManager: TaskManager, taskProvider: TaskProvider, calendarProvider: CalendarProvider, extensionUri: vscode.Uri, notificationManager: NotificationManager) {
         this.taskManager = taskManager;
         this.taskProvider = taskProvider;
+        this.calendarProvider = calendarProvider;
         this.extensionUri = extensionUri;
         this.jiraService = new JiraService();
         this.notificationManager = notificationManager;
@@ -134,6 +136,11 @@ export class Commands {
             }
         });
 
+        // Set First Day of Week command
+        const setFirstDayOfWeekCommand = vscode.commands.registerCommand('recurringtasks.setFirstDayOfWeek', () => {
+            this.setFirstDayOfWeek();
+        });
+
         // Refresh Webview for Notification Changes command
         const refreshWebviewCommand = vscode.commands.registerCommand('recurringtasks.refreshWebviewForNotifications', () => {
             const { TaskDetailsProvider } = require('./TaskDetailsProvider');
@@ -157,6 +164,7 @@ export class Commands {
             exportTasksCommand,
             importTasksCommand,
             reactivateNotificationsCommand,
+            setFirstDayOfWeekCommand,
             refreshWebviewCommand
         );
     }
@@ -275,6 +283,7 @@ export class Commands {
      */
     private refreshTasks(): void {
         this.taskProvider.refresh();
+        this.calendarProvider.refresh();
     }
 
     /**
@@ -306,7 +315,7 @@ export class Commands {
         try {
             const task = item.task;
             const subject = encodeURIComponent(task.title);
-            const body = encodeURIComponent(task.description);
+            const body = encodeURIComponent(task.description || '');
             const startDate = task.dueDate.toISOString();
             
             // Get user's preferred calendar from settings
@@ -425,7 +434,7 @@ export class Commands {
         // Create picker items with task information
         const taskItems = tasks.map(task => ({
             label: task.title,
-            description: task.description,
+            description: task.description || '',
             detail: `Due: ${task.dueDate.toLocaleDateString()} - ${this.getTaskStatusText(task)}`,
             task: task
         }));
@@ -460,6 +469,37 @@ export class Commands {
             } as TaskTreeItem;
         }
         return undefined;
+    }
+
+    /**
+     * Allows users to set the first day of week for the calendar
+     */
+    private async setFirstDayOfWeek(): Promise<void> {
+        const currentSetting = vscode.workspace.getConfiguration('recurringTasks.calendar').get<string>('firstDayOfWeek', 'auto');
+        
+        const choice = await vscode.window.showQuickPick(
+            [
+                { label: 'Auto (use locale)', value: 'auto', description: `Current: ${currentSetting === 'auto' ? 'Auto' : currentSetting}` },
+                { label: 'Sunday', value: 'sunday', description: 'Start week on Sunday' },
+                { label: 'Monday', value: 'monday', description: 'Start week on Monday' }
+            ],
+            {
+                placeHolder: `Current setting: ${currentSetting}. Choose first day of week:`,
+                canPickMany: false
+            }
+        );
+        
+        // Check if user cancelled (pressed Escape)
+        if (!choice) {
+            vscode.window.showInformationMessage('First day of week setting cancelled');
+            return;
+        }
+        
+        await vscode.workspace.getConfiguration('recurringTasks.calendar').update('firstDayOfWeek', choice.value, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`First day of week set to: ${choice.label}`);
+        
+        // Refresh the calendar to show the change
+        this.calendarProvider.refresh();
     }
 
     /**

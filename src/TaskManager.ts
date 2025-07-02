@@ -58,7 +58,7 @@ export class TaskManager {
     /**
      * Adds a new task
      */
-    addTask(title: string, description: string, periodicity: Periodicity, dueDate: Date): Task {
+    addTask(title: string, periodicity: Periodicity, dueDate: Date, description?: string): Task {
         const newTask: Task = {
             id: this.generateId(),
             title,
@@ -323,8 +323,8 @@ export class TaskManager {
                 
                 try {
                     // Validate required fields
-                    if (!taskData.id || !taskData.title || !taskData.description || !taskData.periodicity) {
-                        errors.push(`Task ${i + 1}: Missing required fields (id, title, description, or periodicity)`);
+                    if (!taskData.id || !taskData.title || !taskData.periodicity) {
+                        errors.push(`Task ${i + 1}: Missing required fields (id, title, or periodicity)`);
                         continue;
                     }
 
@@ -340,7 +340,7 @@ export class TaskManager {
                     const task: Task = {
                         id: taskData.id,
                         title: taskData.title,
-                        description: taskData.description,
+                        description: taskData.description || undefined,
                         periodicity: taskData.periodicity,
                         creationDate: new Date(taskData.creationDate || new Date()),
                         dueDate: new Date(taskData.dueDate || new Date()),
