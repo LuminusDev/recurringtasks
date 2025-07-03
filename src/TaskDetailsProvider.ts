@@ -139,7 +139,7 @@ export class TaskDetailsProvider {
         // If we have an existing panel, reuse it
         if (TaskDetailsProvider.currentPanel) {
             TaskDetailsProvider.currentPanel.reveal(vscode.ViewColumn.One);
-            TaskDetailsProvider.currentPanel.title = l10n.t('webview.createTask.title');
+            TaskDetailsProvider.currentPanel.title = l10n.t('Create New Task');
             TaskDetailsProvider.currentPanel.webview.html = TaskDetailsProvider.getCreateTaskWebviewContent(TaskDetailsProvider.currentPanel.webview, extensionUri);
             return;
         }
@@ -147,7 +147,7 @@ export class TaskDetailsProvider {
         // Create a new panel if none exists
         const panel = vscode.window.createWebviewPanel(
             TaskDetailsProvider.viewType,
-            l10n.t('webview.createTask.title'),
+            l10n.t('Create New Task'),
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -243,12 +243,13 @@ export class TaskDetailsProvider {
      */
     private static async handleConfirmDeleteComment(taskId: string, commentId: string): Promise<void> {
         const result = await vscode.window.showWarningMessage(
-            l10n.t('webview.taskDetails.confirmDeleteComment'),
+            l10n.t('Are you sure you want to delete this comment?'),
             { modal: true },
-            l10n.t('common.delete')
+            l10n.t('Save'),
+            l10n.t('Cancel')
         );
 
-        if (result === l10n.t('common.delete')) {
+        if (result === l10n.t('Save')) {
             TaskDetailsProvider.handleDeleteComment(taskId, commentId);
         }
     }
@@ -520,24 +521,24 @@ export class TaskDetailsProvider {
             // Use proper translations for periodicity types
             switch (periodicity.type) {
                 case 'none':
-                    return l10n.t('webview.taskDetails.periodicityDescriptions.oneShotTask');
+                    return l10n.t('One-shot (no recurrence)');
                 case 'daily':
-                    return l10n.t('webview.taskDetails.periodicityDescriptions.daily');
+                    return l10n.t('Daily');
                 case 'weekly':
-                    return l10n.t('webview.taskDetails.periodicityDescriptions.weekly');
+                    return l10n.t('Weekly');
                 case 'monthly':
-                    return l10n.t('webview.taskDetails.periodicityDescriptions.monthly');
+                    return l10n.t('Monthly');
                 case 'yearly':
-                    return l10n.t('webview.taskDetails.periodicityDescriptions.yearly');
+                    return l10n.t('Yearly');
                 case 'custom':
                     if (periodicity.interval) {
-                        return l10n.t('webview.taskDetails.periodicityDescriptions.everyDays', periodicity.interval);
+                        return l10n.t('Every {0} days', periodicity.interval);
                     }
-                    return l10n.t('webview.taskDetails.periodicityDescriptions.everyDays', 1);
+                    return l10n.t('Every {0} days', 1);
                 default:
                     // Fallback for old format (should be migrated)
                     if (periodicity.unit === 'one-shot') {
-                        return l10n.t('webview.taskDetails.periodicityDescriptions.oneShotTask');
+                        return l10n.t('One-shot (no recurrence)');
                     }
                     return `${periodicity.value} ${periodicity.unit}`;
             }
@@ -567,10 +568,10 @@ export class TaskDetailsProvider {
             // For archived one-shot tasks, show completion message
             if (task.status === 'archived' && (!task.periodicity.isRecurring || task.periodicity.type === 'none')) {
                 return {
-                    name: l10n.t('taskStatus.oneShotCompleted'),
-                    timeRemaining: l10n.t('taskStatus.oneShotCompleted'),
+                    name: l10n.t('✅ Completed'),
+                    timeRemaining: l10n.t('Overdue - Complete'),
                     class: 'normal',
-                    description: l10n.t('taskStatus.oneShotCompleted')
+                    description: l10n.t('Overdue - Complete')
                 };
             }
             
@@ -580,58 +581,58 @@ export class TaskDetailsProvider {
                 // Overdue
                 if (progress >= 100) {
                     return {
-                        name: l10n.t('webview.taskDetails.status.overdueComplete'),
+                        name: l10n.t('Overdue - Complete'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'overdue',
-                        description: l10n.t('webview.taskDetails.status.periodCompleteOverdue')
+                        description: l10n.t('Overdue - Complete')
                     };
                 } else {
                     return {
-                        name: l10n.t('webview.taskDetails.status.overdueInProgress'),
+                        name: l10n.t('Overdue - In Progress'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'overdue',
-                        description: l10n.t('webview.taskDetails.status.percentCompleteOverdue', progress)
+                        description: l10n.t('{0}% complete but overdue', progress)
                     };
                 }
             } else if (TaskStatusUtil.isDueSoon(task)) {
                 // Due soon
                 if (progress >= 80) {
                     return {
-                        name: l10n.t('webview.taskDetails.status.dueSoonNearlyComplete'),
+                        name: l10n.t('Due Soon - Nearly Complete'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'due-soon',
-                        description: l10n.t('webview.taskDetails.status.percentCompleteDueSoon', progress)
+                        description: l10n.t('{0}% complete, due soon', progress)
                     };
                 } else {
                     return {
-                        name: l10n.t('webview.taskDetails.status.dueSoonNeedsAttention'),
+                        name: l10n.t('Due Soon - Needs Attention'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'due-soon',
-                        description: l10n.t('webview.taskDetails.status.percentCompleteDueSoon', progress)
+                        description: l10n.t('{0}% complete, due soon', progress)
                     };
                 }
             } else {
                 // On track
                 if (progress >= 100) {
                     return {
-                        name: l10n.t('webview.taskDetails.status.complete'),
+                        name: l10n.t('Complete'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'normal',
-                        description: l10n.t('webview.taskDetails.status.periodComplete')
+                        description: l10n.t('Task period is complete')
                     };
                 } else if (progress >= 50) {
                     return {
-                        name: l10n.t('webview.taskDetails.status.onTrackGoodProgress'),
+                        name: l10n.t('On Track - Good Progress'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'normal',
-                        description: l10n.t('webview.taskDetails.status.percentCompleteOnTrack', progress)
+                        description: l10n.t('{0}% complete, on track', progress)
                     };
                 } else {
                     return {
-                        name: l10n.t('webview.taskDetails.status.onTrackEarlyStage'),
+                        name: l10n.t('On Track - Early Stage'),
                         timeRemaining: TaskStatusUtil.getTimeRemaining(task),
                         class: 'normal',
-                        description: l10n.t('webview.taskDetails.status.percentCompleteOnTrack', progress)
+                        description: l10n.t('{0}% complete, on track', progress)
                     };
                 }
             }
@@ -645,7 +646,7 @@ export class TaskDetailsProvider {
                     lastNotificationTime: null,
                     isOverdue: false,
                     canReceiveNotifications: true,
-                    message: l10n.t('webview.taskDetails.notificationManagerUnavailable')
+                    message: l10n.t('No notification state (notifications are active)')
                 };
             }
 
@@ -660,7 +661,7 @@ export class TaskDetailsProvider {
                     lastNotificationTime: null,
                     isOverdue: false,
                     canReceiveNotifications: false,
-                    message: l10n.t('webview.taskDetails.notificationDisabled')
+                    message: l10n.t('Notifications are globally disabled')
                 };
             }
 
@@ -672,7 +673,7 @@ export class TaskDetailsProvider {
                     lastNotificationTime: null,
                     isOverdue: false,
                     canReceiveNotifications: false,
-                    message: l10n.t('webview.taskDetails.notificationFreencyDisabled')
+                    message: l10n.t('Notifications are disabled (frequency setting)')
                 };
             }
 
@@ -687,7 +688,7 @@ export class TaskDetailsProvider {
                     lastNotificationTime: null,
                     isOverdue: false,
                     canReceiveNotifications: true,
-                    message: l10n.t('webview.taskDetails.notificationActive')
+                    message: l10n.t('No notification state (notifications are active)')
                 };
             }
 
@@ -701,8 +702,8 @@ export class TaskDetailsProvider {
                 isOverdue: taskState.isOverdue,
                 canReceiveNotifications: !maxReached,
                 message: maxReached 
-                    ? l10n.t('webview.taskDetails.notificationMaxReached', taskState.notificationCount, settings.maxNotificationsPerTask)
-                    : l10n.t('webview.taskDetails.notificationCurrent', taskState.notificationCount, settings.maxNotificationsPerTask)
+                    ? l10n.t('Maximum notifications reached ({0}/{1})', taskState.notificationCount, settings.maxNotificationsPerTask)
+                    : l10n.t('Notifications active ({0}/{1})', taskState.notificationCount, settings.maxNotificationsPerTask)
             };
         };
 
@@ -712,11 +713,11 @@ export class TaskDetailsProvider {
                     <div class="comment-header">
                         <div class="comment-info">
                             <span class="comment-date">${formatDate(comment.date)}</span>
-                            ${comment.isValidation ? `<span class="validation-badge">✓ ${l10n.t('webview.taskDetails.validationBadge')}</span>` : ''}
+                            ${comment.isValidation ? `<span class="validation-badge">✓ ${l10n.t('Validation')}</span>` : ''}
                         </div>
                         <div class="comment-actions">
-                            <button class="edit-comment-btn codicon codicon-edit" onclick="editComment('${comment.id}')" title="${l10n.t('webview.taskDetails.editComment')}"></button>
-                            <button class="delete-comment-btn codicon codicon-trash" onclick="deleteComment('${comment.id}')" title="${l10n.t('webview.taskDetails.deleteComment')}"></button>
+                            <button class="edit-comment-btn codicon codicon-edit" onclick="editComment('${comment.id}')" title="${l10n.t('Edit comment')}"></button>
+                            <button class="delete-comment-btn codicon codicon-trash" onclick="deleteComment('${comment.id}')" title="${l10n.t('Delete comment')}"></button>
                         </div>
                     </div>
                     <div class="comment-content" id="comment-content-${comment.id}">${convertUrlsToLinks(comment.text)}</div>
@@ -725,17 +726,17 @@ export class TaskDetailsProvider {
                         <div class="comment-edit-actions">
                             <button class="save-comment-btn" onclick="saveComment('${comment.id}')">
                                 <span class="codicon codicon-check"></span>
-                                ${l10n.t('webview.taskDetails.saveComment')}
+                                ${l10n.t('Save')}
                             </button>
                             <button class="cancel-comment-btn" onclick="cancelEdit('${comment.id}')">
                                 <span class="codicon codicon-close"></span>
-                                ${l10n.t('webview.taskDetails.cancelEdit')}
+                                ${l10n.t('Cancel')}
                             </button>
                         </div>
                     </div>
                 </div>
             `).join('')
-            : `<p class="no-comments">${l10n.t('webview.taskDetails.noComments')}</p>`;
+            : `<p class="no-comments">${l10n.t('No comments yet.')}</p>`;
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -743,7 +744,7 @@ export class TaskDetailsProvider {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; script-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'none';">
-    <title>${l10n.t('webview.taskDetails.title')}</title>
+    <title>${l10n.t('Task Details')}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
     <style>
         body {
@@ -1547,39 +1548,39 @@ export class TaskDetailsProvider {
                 <div class="task-title">
                     <span class="task-icon ${getStatusClass()}">${getStatusClass() === 'overdue' ? '🔴' : getStatusClass() === 'due-soon' ? '🟡' : '✅'}</span>
                     <span id="task-title-display">${TaskDetailsProvider.escapeForHtml(task.title)}</span>
-                    <button class="edit-btn codicon codicon-edit" onclick="editTaskTitle()" title="${l10n.t('webview.taskDetails.buttons.editTitle')}"></button>
+                    <button class="edit-btn codicon codicon-edit" onclick="editTaskTitle()" title="${l10n.t('Edit task title')}"></button>
                 </div>
                 <div class="edit-form" id="title-edit-form">
                     <div class="edit-form-group">
-                        <label class="edit-form-label">${l10n.t('webview.taskDetails.labels.taskTitle')}</label>
+                        <label class="edit-form-label">${l10n.t('Task Title')}</label>
                         <input type="text" id="title-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForHtml(task.title)}">
                     </div>
                     <div class="edit-form-actions">
-                        <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">${l10n.t('common.cancel')}</button>
-                        <button class="edit-btn-small edit-btn-primary" onclick="saveTaskTitle()">${l10n.t('common.save')}</button>
+                        <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditTitle()">${l10n.t('Cancel')}</button>
+                        <button class="edit-btn-small edit-btn-primary" onclick="saveTaskTitle()">${l10n.t('Save')}</button>
                     </div>
                 </div>
                 
                 <div class="task-description">
-                    <span id="task-description-display">${task.description ? convertUrlsToLinks(task.description) : `<em>${l10n.t('webview.taskDetails.placeholders.noDescription')}</em>`}</span>
-                    <button class="edit-btn codicon codicon-edit" onclick="editTaskDescription()" title="${l10n.t('webview.taskDetails.buttons.editDescription')}"></button>
+                    <span id="task-description-display">${task.description ? convertUrlsToLinks(task.description) : `<em>${l10n.t('No description')}</em>`}</span>
+                    <button class="edit-btn codicon codicon-edit" onclick="editTaskDescription()" title="${l10n.t('Edit task description')}"></button>
                 </div>
                 <div class="edit-form" id="description-edit-form">
                     <div class="edit-form-group">
-                        <label class="edit-form-label">${l10n.t('webview.taskDetails.labels.taskDescription')}</label>
+                        <label class="edit-form-label">${l10n.t('Task Description')}</label>
                         <textarea id="description-edit-textarea" class="edit-form-textarea">${TaskDetailsProvider.escapeForHtml(task.description || '')}</textarea>
                     </div>
                     <div class="edit-form-actions">
-                        <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">${l10n.t('common.cancel')}</button>
-                        <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDescription()">${l10n.t('common.save')}</button>
+                        <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDescription()">${l10n.t('Cancel')}</button>
+                        <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDescription()">${l10n.t('Save')}</button>
                     </div>
                 </div>
             </div>
             <div class="task-header-actions">
-                <button class="secondary-btn jira-secondary-btn" onclick="createJiraIssue()" title="${l10n.t('webview.taskDetails.createJiraIssue')}">
+                <button class="secondary-btn jira-secondary-btn" onclick="createJiraIssue()" title="${l10n.t('Create JIRA Issue')}">
                     <span class="codicon codicon-bug"></span>
                 </button>
-                <button class="secondary-btn meeting-secondary-btn" onclick="createMeeting()" title="${l10n.t('webview.taskDetails.createMeeting')}">
+                <button class="secondary-btn meeting-secondary-btn" onclick="createMeeting()" title="${l10n.t('Create Calendar Meeting')}">
                     <span class="codicon codicon-calendar"></span>
                 </button>
             </div>
@@ -1589,7 +1590,7 @@ export class TaskDetailsProvider {
     <div class="visual-section">
         <div class="visual-title">
             <span>📊</span>
-            ${l10n.t('webview.taskDetails.labels.statusProgress')}
+            ${l10n.t('Status & Progress Overview')}
         </div>
         <div class="time-progress">
             <div class="status-progress-header">
@@ -1603,20 +1604,20 @@ export class TaskDetailsProvider {
                         <span id="periodicity-display">
                             <span class="periodicity-value">${TaskDetailsProvider.escapeForHtml(formatPeriodicity(task.periodicity))}</span>
                         </span>
-                        <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="${l10n.t('webview.taskDetails.buttons.editPeriodicity')}"></button>
+                        <button class="edit-btn codicon codicon-edit" onclick="editTaskPeriodicity()" title="${l10n.t('Edit periodicity')}"></button>
                     </span>
                 </div>
                 <div class="compact-meta-item">
                     <span class="meta-icon">⏰</span>
                     <span class="meta-info">
                         <span id="due-date-display">
-                            ${l10n.t('webview.taskDetails.labels.due')} ${formatDate(task.dueDate)}
+                            ${l10n.t('Due')} ${formatDate(task.dueDate)}
                             ${!task.periodicity.isRecurring || task.periodicity.type === 'none' 
-                                ? ` (${l10n.t('webview.taskDetails.labels.created')} ${formatDate(task.creationDate)})` 
+                                ? ` (${l10n.t('created')} ${formatDate(task.creationDate)})` 
                                 : ''
                             }
                         </span>
-                        <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="${l10n.t('webview.taskDetails.buttons.editDueDate')}"></button>
+                        <button class="edit-btn codicon codicon-edit" onclick="editTaskDueDate()" title="${l10n.t('Edit due date')}"></button>
                     </span>
                 </div>
                 <div class="compact-meta-item">
@@ -1625,12 +1626,12 @@ export class TaskDetailsProvider {
                         <span id="notification-display" class="${getNotificationInfo().canReceiveNotifications ? 'notification-active' : 'notification-disabled'}">
                             ${TaskDetailsProvider.escapeForHtml(getNotificationInfo().message)}
                             ${getNotificationInfo().hasState && getNotificationInfo().lastNotificationTime 
-                                ? `<br><small>${l10n.t('webview.taskDetails.labels.last')} ${formatDate(getNotificationInfo().lastNotificationTime)}</small>` 
+                                ? `<br><small>${l10n.t('Last:')} ${formatDate(getNotificationInfo().lastNotificationTime)}</small>` 
                                 : ''
                             }
                         </span>
                         ${getNotificationInfo().hasState ? 
-                            `<button class="edit-btn codicon codicon-refresh" onclick="reactivateNotifications()" title="${l10n.t('webview.taskDetails.buttons.reactivateNotifications')}"></button>` 
+                            `<button class="edit-btn codicon codicon-refresh" onclick="reactivateNotifications()" title="${l10n.t('Reactivate notifications')}"></button>` 
                             : ''
                         }
                     </span>
@@ -1640,7 +1641,7 @@ export class TaskDetailsProvider {
             <div class="time-visual">
                 <div class="time-circle ${getStatusClass()}">${TaskStatusUtil.getTimeProgress(task)}%</div>
                 <div class="time-details">
-                    <div class="time-label">${l10n.t('webview.taskDetails.labels.timeRemaining')}</div>
+                    <div class="time-label">${l10n.t('Time Remaining')}</div>
                     <div class="time-value">${TaskDetailsProvider.escapeForHtml(getStatusInfo().timeRemaining)}</div>
                 </div>
             </div>
@@ -1652,53 +1653,53 @@ export class TaskDetailsProvider {
 
     <div class="edit-form" id="periodicity-edit-form">
         <div class="edit-form-group">
-            <label class="edit-form-label">${l10n.t('webview.taskDetails.labels.periodicityType')}</label>
+            <label class="edit-form-label">${l10n.t('Periodicity Type')}</label>
             <select id="periodicity-type" class="edit-form-select" onchange="handlePeriodicityTypeChange()">
-                <option value="none" ${task.periodicity.type === 'none' ? 'selected' : ''}>${l10n.t('webview.taskDetails.periodicityOptions.oneShot')}</option>
-                <option value="daily" ${task.periodicity.type === 'daily' ? 'selected' : ''}>${l10n.t('webview.taskDetails.periodicityOptions.daily')}</option>
-                <option value="weekly" ${task.periodicity.type === 'weekly' ? 'selected' : ''}>${l10n.t('webview.taskDetails.periodicityOptions.weekly')}</option>
-                <option value="monthly" ${task.periodicity.type === 'monthly' ? 'selected' : ''}>${l10n.t('webview.taskDetails.periodicityOptions.monthly')}</option>
-                <option value="yearly" ${task.periodicity.type === 'yearly' ? 'selected' : ''}>${l10n.t('webview.taskDetails.periodicityOptions.yearly')}</option>
-                <option value="custom" ${task.periodicity.type === 'custom' ? 'selected' : ''}>${l10n.t('webview.taskDetails.periodicityOptions.custom')}</option>
+                <option value="none" ${task.periodicity.type === 'none' ? 'selected' : ''}>${l10n.t('One-shot (no recurrence)')}</option>
+                <option value="daily" ${task.periodicity.type === 'daily' ? 'selected' : ''}>${l10n.t('Daily')}</option>
+                <option value="weekly" ${task.periodicity.type === 'weekly' ? 'selected' : ''}>${l10n.t('Weekly')}</option>
+                <option value="monthly" ${task.periodicity.type === 'monthly' ? 'selected' : ''}>${l10n.t('Monthly')}</option>
+                <option value="yearly" ${task.periodicity.type === 'yearly' ? 'selected' : ''}>${l10n.t('Yearly')}</option>
+                <option value="custom" ${task.periodicity.type === 'custom' ? 'selected' : ''}>${l10n.t('Custom interval')}</option>
             </select>
         </div>
         <div class="edit-form-group" id="custom-interval-group" style="display: ${task.periodicity.type === 'custom' ? 'block' : 'none'};">
-            <label class="edit-form-label">${l10n.t('webview.taskDetails.labels.customInterval')}</label>
+            <label class="edit-form-label">${l10n.t('Custom Interval (days)')}</label>
             <input type="number" id="periodicity-interval" class="edit-form-input" value="${TaskDetailsProvider.escapeForHtml(String(task.periodicity.interval || 1))}">
         </div>
         <div class="edit-form-actions">
-            <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditPeriodicity()">${l10n.t('common.cancel')}</button>
-            <button class="edit-btn-small edit-btn-primary" onclick="saveTaskPeriodicity()">${l10n.t('common.save')}</button>
+            <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditPeriodicity()">${l10n.t('Cancel')}</button>
+            <button class="edit-btn-small edit-btn-primary" onclick="saveTaskPeriodicity()">${l10n.t('Save')}</button>
         </div>
     </div>
 
     <div class="edit-form" id="due-date-edit-form">
         <div class="edit-form-group">
-            <label class="edit-form-label">${l10n.t('webview.taskDetails.labels.nextDueDate')}</label>
+            <label class="edit-form-label">${l10n.t('Next Due Date')}</label>
             <input type="datetime-local" id="due-date-edit-input" class="edit-form-input" value="${TaskDetailsProvider.escapeForHtml(task.dueDate.toISOString().slice(0, 16))}">
         </div>
         <div class="edit-form-actions">
-            <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDueDate()">${l10n.t('common.cancel')}</button>
-            <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDueDate()">${l10n.t('common.save')}</button>
+            <button class="edit-btn-small edit-btn-secondary" onclick="cancelEditDueDate()">${l10n.t('Cancel')}</button>
+            <button class="edit-btn-small edit-btn-primary" onclick="saveTaskDueDate()">${l10n.t('Save')}</button>
         </div>
     </div>
 
     <div class="validate-task-section">
         <div class="validate-task-title">
             <span class="codicon codicon-check"></span>
-            ${l10n.t('webview.taskDetails.validation.title')}
+            ${l10n.t('Validate Task')}
         </div>
         <div class="validate-task-description">
             ${!task.periodicity.isRecurring || task.periodicity.type === 'none'
-                ? l10n.t('webview.taskDetails.validation.description.oneShot')
-                : l10n.t('webview.taskDetails.validation.description.recurring')
+                ? l10n.t('Mark this task as complete. One-shot tasks will be automatically archived after validation.')
+                : l10n.t('Mark this task as complete and set the next due date based on the periodicity.')
             }
         </div>
         <div class="add-comment-section">
-            <textarea class="add-comment-textarea" id="validate-comment-textarea" placeholder="${l10n.t('webview.taskDetails.validateCommentPlaceholder')}"></textarea>
+            <textarea class="add-comment-textarea" id="validate-comment-textarea" placeholder="${l10n.t('Add a validation comment (optional)...')}"></textarea>
             <button class="add-comment-btn" onclick="validateTask()">
                 <span class="codicon codicon-check"></span>
-                ${l10n.t('webview.taskDetails.validateTask')}
+                ${l10n.t('Validate Task')}
             </button>
         </div>
     </div>
@@ -1706,25 +1707,25 @@ export class TaskDetailsProvider {
     <div class="comments-section">
         <div class="comments-header">
             <span class="comments-icon">💬</span>
-            ${l10n.t('webview.taskDetails.labels.comments')} (${task.comments.length})
+            ${l10n.t('Comments')} (${task.comments.length})
         </div>
         
         <div class="comments-filter">
-            <span style="color: var(--vscode-descriptionForeground);">${l10n.t('webview.taskDetails.labels.filter')}</span>
+            <span style="color: var(--vscode-descriptionForeground);">${l10n.t('Filter:')}</span>
             <div class="filter-toggle">
-                <button class="filter-option active" id="filter-all" onclick="filterComments('all')">${l10n.t('webview.taskDetails.allComments')}</button>
-                <button class="filter-option" id="filter-validation" onclick="filterComments('validation')">${l10n.t('webview.taskDetails.labels.validation')} (${task.comments.filter(c => c.isValidation).length})</button>
+                <button class="filter-option active" id="filter-all" onclick="filterComments('all')">${l10n.t('All')}</button>
+                <button class="filter-option" id="filter-validation" onclick="filterComments('validation')">${l10n.t('Validation')} (${task.comments.filter(c => c.isValidation).length})</button>
             </div>
             <span style="color: var(--vscode-descriptionForeground); margin-left: auto;" id="comment-counter">
-                ${l10n.t('webview.taskDetails.comments.count', task.comments.length)}
+                ${l10n.t('{0} comments', task.comments.length)}
             </span>
         </div>
         
         <div class="add-comment-section">
-            <textarea class="add-comment-textarea" id="new-comment-textarea" placeholder="${l10n.t('webview.taskDetails.placeholders.addNewComment')}"></textarea>
+            <textarea class="add-comment-textarea" id="new-comment-textarea" placeholder="${l10n.t('Add a new comment...')}"></textarea>
             <button class="add-comment-btn" onclick="addComment()">
                 <span class="codicon codicon-add"></span>
-                ${l10n.t('webview.taskDetails.addComment')}
+                ${l10n.t('Add Comment')}
             </button>
         </div>
         
@@ -1904,24 +1905,24 @@ export class TaskDetailsProvider {
 
                 if (newType === 'custom') {
                     periodicityData.interval = newInterval;
-                    periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.everyDays', '{newInterval}')}';
+                    periodicityData.description = '${l10n.t('Every {0} days', '{newInterval}')}';
                 } else {
                     // Set description based on type
                     switch (newType) {
                         case 'none':
-                            periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.oneShotTask')}';
+                            periodicityData.description = '${l10n.t('One-shot task')}';
                             break;
                         case 'daily':
-                            periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.daily')}';
+                            periodicityData.description = '${l10n.t('Daily')}';
                             break;
                         case 'weekly':
-                            periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.weekly')}';
+                            periodicityData.description = '${l10n.t('Weekly')}';
                             break;
                         case 'monthly':
-                            periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.monthly')}';
+                            periodicityData.description = '${l10n.t('Monthly')}';
                             break;
                         case 'yearly':
-                            periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.yearly')}';
+                            periodicityData.description = '${l10n.t('Yearly')}';
                             break;
                     }
                 }
@@ -1990,7 +1991,7 @@ export class TaskDetailsProvider {
             // Update comment counter
             const commentCounter = document.getElementById('comment-counter');
             const visibleComments = document.querySelectorAll('.comment:not(.hidden)');
-            commentCounter.textContent = '${l10n.t('webview.taskDetails.comments.count', '{count}')}' + visibleComments.length;
+            commentCounter.textContent = '${l10n.t('{0} comments', '{count}')}' + visibleComments.length;
         }
 
         // Edit task due date functionality
@@ -2047,7 +2048,7 @@ export class TaskDetailsProvider {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' https://cdn.jsdelivr.net; font-src https://cdn.jsdelivr.net; script-src 'unsafe-inline'; img-src 'self' data: https:; connect-src 'none';">
-    <title>${l10n.t('webview.createTask.title')}</title>
+    <title>${l10n.t('Create New Task')}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.35/dist/codicon.css">
     <style>
         body {
@@ -2206,65 +2207,65 @@ export class TaskDetailsProvider {
     <div class="form-header">
         <div class="form-title">
             <span class="codicon codicon-add"></span>
-            ${l10n.t('webview.createTask.header')}
+            ${l10n.t('Create New Recurring Task')}
         </div>
     </div>
 
     <form id="create-task-form">
         <div class="form-group">
             <label class="form-label" for="task-title">
-                ${l10n.t('webview.createTask.labels.taskTitle')} <span class="required">*</span>
+                ${l10n.t('Task Title')} <span class="required">*</span>
             </label>
-            <input type="text" id="task-title" class="form-input" required placeholder="${l10n.t('webview.createTask.placeholders.enterTitle')}">
-            <div class="error-message" id="title-error">${l10n.t('webview.createTask.errors.titleRequired')}</div>
+            <input type="text" id="task-title" class="form-input" required placeholder="${l10n.t('Enter task title')}">
+            <div class="error-message" id="title-error">${l10n.t('Please enter a task title')}</div>
         </div>
 
         <div class="form-group">
             <label class="form-label" for="task-description">
-                ${l10n.t('webview.createTask.labels.description')}
+                ${l10n.t('Description')}
             </label>
-            <textarea id="task-description" class="form-textarea" placeholder="${l10n.t('webview.createTask.placeholders.enterDescription')}"></textarea>
-            <div class="error-message" id="description-error">${l10n.t('webview.createTask.errors.descriptionRequired')}</div>
+            <textarea id="task-description" class="form-textarea" placeholder="${l10n.t('Enter task description (optional)')}"></textarea>
+            <div class="error-message" id="description-error">${l10n.t('Please enter a task description')}</div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">${l10n.t('webview.createTask.labels.periodicity')} <span class="required">*</span></label>
+            <label class="form-label">${l10n.t('Periodicity')} <span class="required">*</span></label>
             <select id="periodicity-type" class="form-select" required onchange="handlePeriodicityTypeChange()">
-                <option value="">${l10n.t('webview.createTask.placeholders.selectPeriodicity')}</option>
-                <option value="none">${l10n.t('webview.taskDetails.periodicityOptions.oneShot')}</option>
-                <option value="daily">${l10n.t('webview.taskDetails.periodicityOptions.daily')}</option>
-                <option value="weekly">${l10n.t('webview.taskDetails.periodicityOptions.weekly')}</option>
-                <option value="monthly">${l10n.t('webview.taskDetails.periodicityOptions.monthly')}</option>
-                <option value="yearly">${l10n.t('webview.taskDetails.periodicityOptions.yearly')}</option>
-                <option value="custom">${l10n.t('webview.taskDetails.periodicityOptions.custom')}</option>
+                <option value="">${l10n.t('Select periodicity type')}</option>
+                <option value="none">${l10n.t('One-shot (no recurrence)')}</option>
+                <option value="daily">${l10n.t('Daily')}</option>
+                <option value="weekly">${l10n.t('Weekly')}</option>
+                <option value="monthly">${l10n.t('Monthly')}</option>
+                <option value="yearly">${l10n.t('Yearly')}</option>
+                <option value="custom">${l10n.t('Custom interval')}</option>
             </select>
-            <div class="error-message" id="periodicity-error">${l10n.t('webview.createTask.errors.periodicityRequired')}</div>
+            <div class="error-message" id="periodicity-error">${l10n.t('Please select a periodicity type')}</div>
         </div>
 
         <div class="form-group" id="custom-interval-group" style="display: none;">
             <label class="form-label" for="custom-interval">
-                ${l10n.t('webview.createTask.labels.customInterval')} <span class="required">*</span>
+                ${l10n.t('Custom Interval (days)')} <span class="required">*</span>
             </label>
-            <input type="number" id="custom-interval" class="form-input" min="1" placeholder="${l10n.t('webview.createTask.placeholders.numberOfDays')}">
-            <div class="error-message" id="custom-interval-error">${l10n.t('webview.createTask.errors.intervalRequired')}</div>
+            <input type="number" id="custom-interval" class="form-input" min="1" placeholder="${l10n.t('Number of days')}">
+            <div class="error-message" id="custom-interval-error">${l10n.t('Please enter a valid number of days')}</div>
         </div>
 
         <div class="form-group">
             <label class="form-label" for="due-date">
-                ${l10n.t('webview.createTask.labels.dueDate')} <span class="required">*</span>
+                ${l10n.t('Next Due Date')} <span class="required">*</span>
             </label>
             <input type="datetime-local" id="due-date" class="form-input" required>
-            <div class="error-message" id="due-date-error">${l10n.t('webview.createTask.errors.dueDateRequired')}</div>
+            <div class="error-message" id="due-date-error">${l10n.t('Please select a due date')}</div>
         </div>
 
         <div class="form-actions">
             <button type="button" class="btn btn-secondary" onclick="cancelCreate()">
                 <span class="codicon codicon-close"></span>
-                ${l10n.t('common.cancel')}
+                ${l10n.t('Cancel')}
             </button>
             <button type="submit" class="btn btn-primary">
                 <span class="codicon codicon-check"></span>
-                ${l10n.t('webview.createTask.createButton')}
+                ${l10n.t('Create Task')}
             </button>
         </div>
     </form>
@@ -2306,7 +2307,7 @@ export class TaskDetailsProvider {
             let isValid = true;
             
             if (!title) {
-                showError('title-error', '${l10n.t('webview.createTask.errors.titleRequired').replace(/'/g, "\\'")}');
+                showError('title-error', '${l10n.t('Please enter a task title').replace(/'/g, "\\'")}');
                 isValid = false;
             } else {
                 hideError('title-error');
@@ -2316,7 +2317,7 @@ export class TaskDetailsProvider {
             hideError('description-error');
             
             if (!periodicityType) {
-                showError('periodicity-error', '${l10n.t('webview.createTask.errors.periodicityRequired').replace(/'/g, "\\'")}');
+                showError('periodicity-error', '${l10n.t('Please select a periodicity type').replace(/'/g, "\\'")}');
                 isValid = false;
             } else {
                 hideError('periodicity-error');
@@ -2325,7 +2326,7 @@ export class TaskDetailsProvider {
             // Validate custom interval if custom type is selected
             if (periodicityType === 'custom') {
                 if (!customInterval || customInterval < 1) {
-                    showError('custom-interval-error', '${l10n.t('webview.createTask.errors.intervalRequired').replace(/'/g, "\\'")}');
+                    showError('custom-interval-error', '${l10n.t('Please enter a valid number of days').replace(/'/g, "\\'")}');
                     isValid = false;
                 } else {
                     hideError('custom-interval-error');
@@ -2333,7 +2334,7 @@ export class TaskDetailsProvider {
             }
             
             if (!dueDate) {
-                showError('due-date-error', '${l10n.t('webview.createTask.errors.dueDateRequired').replace(/'/g, "\\'")}');
+                showError('due-date-error', '${l10n.t('Please select a due date').replace(/'/g, "\\'")}');
                 isValid = false;
             } else {
                 hideError('due-date-error');
@@ -2351,25 +2352,25 @@ export class TaskDetailsProvider {
 
             if (periodicityType === 'custom') {
                 periodicityData.interval = customInterval;
-                periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.everyDays').replace('{0}', '" + customInterval + "')}';
+                periodicityData.description = '${l10n.t('Every {0} days').replace('{0}', '" + customInterval + "')}';
             } else {
                 // Set description based on type
                 switch (periodicityType) {
-                    case 'none':
-                        periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.oneShotTask')}';
-                        break;
-                    case 'daily':
-                        periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.daily')}';
-                        break;
-                    case 'weekly':
-                        periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.weekly')}';
-                        break;
-                    case 'monthly':
-                        periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.monthly')}';
-                        break;
-                    case 'yearly':
-                        periodicityData.description = '${l10n.t('webview.taskDetails.periodicityDescriptions.yearly')}';
-                        break;
+                                            case 'none':
+                            periodicityData.description = '${l10n.t('One-shot task')}';
+                            break;
+                        case 'daily':
+                            periodicityData.description = '${l10n.t('Daily')}';
+                            break;
+                        case 'weekly':
+                            periodicityData.description = '${l10n.t('Weekly')}';
+                            break;
+                        case 'monthly':
+                            periodicityData.description = '${l10n.t('Monthly')}';
+                            break;
+                        case 'yearly':
+                            periodicityData.description = '${l10n.t('Yearly')}';
+                            break;
                 }
             }
             

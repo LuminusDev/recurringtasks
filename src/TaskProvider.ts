@@ -23,7 +23,7 @@ export class TaskTreeItem extends vscode.TreeItem {
         // Add command to show task details when clicked
         this.command = {
             command: 'recurringtasks.showTaskDetails',
-            title: l10n.t('taskStatus.showTaskDetails'),
+            title: l10n.t('Show Task Details'),
             arguments: [task]
         };
         
@@ -113,16 +113,16 @@ export class TaskProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
             const categories: CategoryTreeItem[] = [];
             if (overdueTasks.length > 0) {
-                categories.push(new CategoryTreeItem(l10n.t('taskProvider.overdue'), vscode.TreeItemCollapsibleState.Expanded, overdueTasks));
+                categories.push(new CategoryTreeItem(l10n.t('Overdue'), vscode.TreeItemCollapsibleState.Expanded, overdueTasks));
             }
             if (dueSoonTasks.length > 0) {
-                categories.push(new CategoryTreeItem(l10n.t('taskProvider.dueSoon'), vscode.TreeItemCollapsibleState.Expanded, dueSoonTasks));
+                categories.push(new CategoryTreeItem(l10n.t('Due Soon'), vscode.TreeItemCollapsibleState.Expanded, dueSoonTasks));
             }
             if (otherTasks.length > 0) {
-                categories.push(new CategoryTreeItem(l10n.t('taskProvider.upcoming'), vscode.TreeItemCollapsibleState.Expanded, otherTasks));
+                categories.push(new CategoryTreeItem(l10n.t('Upcoming'), vscode.TreeItemCollapsibleState.Expanded, otherTasks));
             }
             if (archivedTasks.length > 0) {
-                categories.push(new CategoryTreeItem(l10n.t('taskProvider.archived'), vscode.TreeItemCollapsibleState.Collapsed, archivedTasks));
+                categories.push(new CategoryTreeItem(l10n.t('Archived'), vscode.TreeItemCollapsibleState.Collapsed, archivedTasks));
             }
 
             return Promise.resolve(categories);

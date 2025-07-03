@@ -95,18 +95,18 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 
         // Month names
         const monthNames = [
-            l10n.t('webview.calendar.months.january'),
-            l10n.t('webview.calendar.months.february'),
-            l10n.t('webview.calendar.months.march'),
-            l10n.t('webview.calendar.months.april'),
-            l10n.t('webview.calendar.months.may'),
-            l10n.t('webview.calendar.months.june'),
-            l10n.t('webview.calendar.months.july'),
-            l10n.t('webview.calendar.months.august'),
-            l10n.t('webview.calendar.months.september'),
-            l10n.t('webview.calendar.months.october'),
-            l10n.t('webview.calendar.months.november'),
-            l10n.t('webview.calendar.months.december')
+            l10n.t('January'),
+            l10n.t('February'),
+            l10n.t('March'),
+            l10n.t('April'),
+            l10n.t('May'),
+            l10n.t('June'),
+            l10n.t('July'),
+            l10n.t('August'),
+            l10n.t('September'),
+            l10n.t('October'),
+            l10n.t('November'),
+            l10n.t('December')
         ];
 
         // Group tasks by date
@@ -117,7 +117,7 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${l10n.t('webview.calendar.title')}</title>
+    <title>${l10n.t('Tasks Calendar')}</title>
     <style>
         body {
             font-family: var(--vscode-font-family);
@@ -349,12 +349,12 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 <body>
     <div class="calendar-header">
         <div class="calendar-nav">
-            <button class="nav-button" onclick="previousMonth()" title="${l10n.t('webview.calendar.previousMonth')}">‹</button>
-            <button class="nav-button" onclick="nextMonth()" title="${l10n.t('webview.calendar.nextMonth')}">›</button>
-            <button class="nav-button" onclick="goToToday()" title="${l10n.t('webview.calendar.goToToday')}">⌂</button>
+            <button class="nav-button" onclick="previousMonth()" title="${l10n.t('Previous Month')}">‹</button>
+            <button class="nav-button" onclick="nextMonth()" title="${l10n.t('Next Month')}">›</button>
+            <button class="nav-button" onclick="goToToday()" title="${l10n.t('Go to Today')}">⌂</button>
         </div>
         <div class="month-title">${monthNames[month]} ${year}</div>
-        <button class="refresh-button" onclick="refresh()" title="${l10n.t('webview.calendar.refresh')}">⟳</button>
+        <button class="refresh-button" onclick="refresh()" title="${l10n.t('Refresh Calendar')}">⟳</button>
     </div>
 
     <div class="calendar-grid">
@@ -414,13 +414,13 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 
     private _generateDayHeaders(firstDayOfWeek: number): string {
         const dayNames = [
-            l10n.t('webview.calendar.days.sun'),
-            l10n.t('webview.calendar.days.mon'),
-            l10n.t('webview.calendar.days.tue'),
-            l10n.t('webview.calendar.days.wed'),
-            l10n.t('webview.calendar.days.thu'),
-            l10n.t('webview.calendar.days.fri'),
-            l10n.t('webview.calendar.days.sat')
+            l10n.t('Sun'),
+            l10n.t('Mon'),
+            l10n.t('Tue'),
+            l10n.t('Wed'),
+            l10n.t('Thu'),
+            l10n.t('Fri'),
+            l10n.t('Sat')
         ];
         let html = '';
         

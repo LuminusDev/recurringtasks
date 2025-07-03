@@ -75,7 +75,7 @@ export class Commands {
                 if (selectedTask) {
                     this.createOutlookMeeting(selectedTask);
                 } else {
-                    vscode.window.showWarningMessage(l10n.t('commands.selectTaskFirst'));
+                    vscode.window.showWarningMessage(l10n.t('Please select a task first to create a calendar meeting.'));
                 }
             } else {
                 this.createOutlookMeeting(item);
@@ -95,7 +95,7 @@ export class Commands {
                 if (selectedTask) {
                     this.createJiraIssue(selectedTask);
                 } else {
-                    vscode.window.showWarningMessage(l10n.t('commands.selectTaskFirstJira'));
+                    vscode.window.showWarningMessage(l10n.t('Please select a task first to create a JIRA issue.'));
                 }
             } else {
                 this.createJiraIssue(item);
@@ -130,7 +130,7 @@ export class Commands {
                 if (selectedTask) {
                     this.reactivateNotifications(selectedTask);
                 } else {
-                    vscode.window.showWarningMessage(l10n.t('commands.selectTaskFirstNotifications'));
+                    vscode.window.showWarningMessage(l10n.t('Please select a task first to reactivate notifications.'));
                 }
             } else {
                 this.reactivateNotifications(item);
@@ -177,7 +177,7 @@ export class Commands {
         try {
             TaskDetailsProvider.showCreateTaskForm(this.extensionUri);
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.createTaskFormError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to show create task form: {0}', String(error)));
         }
     }
 
@@ -194,7 +194,7 @@ export class Commands {
 
             // Check if user cancelled (pressed Escape)
             if (comment === undefined) {
-                vscode.window.showInformationMessage(l10n.t('commands.taskValidationCancelled'));
+                vscode.window.showInformationMessage(l10n.t('Task validation cancelled'));
                 return;
             }
 
@@ -207,13 +207,13 @@ export class Commands {
                 
                 const nextDueDate = updatedTask.dueDate.toLocaleDateString();
                 vscode.window.showInformationMessage(
-                    l10n.t('commands.taskValidated', item.task.title, nextDueDate)
+                    l10n.t('Task "{0}" validated! Next due: {1}', item.task.title, nextDueDate)
                 );
             } else {
-                vscode.window.showErrorMessage(l10n.t('commands.taskValidationFailed'));
+                vscode.window.showErrorMessage(l10n.t('Failed to validate task'));
             }
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.taskValidationError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to validate task: {0}', String(error)));
         }
     }
 
@@ -225,12 +225,12 @@ export class Commands {
             const success = this.taskManager.archiveTask(item.task.id);
             if (success) {
                 this.refreshTasks();
-                vscode.window.showInformationMessage(l10n.t('commands.taskArchived', item.task.title));
+                vscode.window.showInformationMessage(l10n.t('Task "{0}" archived.', item.task.title));
             } else {
-                vscode.window.showErrorMessage(l10n.t('commands.taskArchiveFailed'));
+                vscode.window.showErrorMessage(l10n.t('Failed to archive task.'));
             }
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.taskArchiveError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to archive task: {0}', String(error)));
         }
     }
 
@@ -242,12 +242,12 @@ export class Commands {
             const success = this.taskManager.unarchiveTask(item.task.id);
             if (success) {
                 this.refreshTasks();
-                vscode.window.showInformationMessage(l10n.t('commands.taskUnarchived', item.task.title));
+                vscode.window.showInformationMessage(l10n.t('Task "{0}" unarchived.', item.task.title));
             } else {
-                vscode.window.showErrorMessage(l10n.t('commands.taskUnarchiveFailed'));
+                vscode.window.showErrorMessage(l10n.t('Failed to unarchive task.'));
             }
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.taskUnarchiveError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to unarchive task: {0}', String(error)));
         }
     }
 
@@ -258,24 +258,24 @@ export class Commands {
         try {
             // Confirm deletion
             const result = await vscode.window.showWarningMessage(
-                l10n.t('commands.taskDeleteConfirm', item.task.title),
+                l10n.t('Are you sure you want to delete "{0}"?', item.task.title),
                 { modal: true },
-                l10n.t('common.delete')
+                l10n.t('Delete')
             );
 
-            if (result === l10n.t('common.delete')) {
+            if (result === l10n.t('Delete')) {
                 const success = this.taskManager.deleteTask(item.task.id);
                 
                 if (success) {
                     // Refresh the view
                     this.refreshTasks();
-                    vscode.window.showInformationMessage(l10n.t('commands.taskDeleted', item.task.title));
+                    vscode.window.showInformationMessage(l10n.t('Task "{0}" deleted successfully!', item.task.title));
                 } else {
-                    vscode.window.showErrorMessage(l10n.t('commands.taskDeleteFailed'));
+                    vscode.window.showErrorMessage(l10n.t('Failed to delete task'));
                 }
             }
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.taskDeleteError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to delete task: {0}', String(error)));
         }
     }
 
@@ -294,7 +294,7 @@ export class Commands {
         try {
             await this.notificationManager.reactivateNotificationsForTask(item.task.id);
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.notificationReactivateError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to reactivate notifications: {0}', String(error)));
         }
     }
 
@@ -305,7 +305,7 @@ export class Commands {
         try {
             TaskDetailsProvider.showTaskDetails(task, this.extensionUri);
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.taskDetailsError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to show task details: {0}', String(error)));
         }
     }
 
@@ -324,18 +324,18 @@ export class Commands {
             
             let calendarChoice: string;
             
-            if (preferredCalendar === l10n.t('calendar.askEachTime')) {
+            if (preferredCalendar === l10n.t('Ask each time')) {
                 // Ask user which web calendar to use
                 const userChoice = await vscode.window.showQuickPick(
-                    [l10n.t('calendar.outlookWeb'), l10n.t('calendar.googleCalendar')],
+                    [l10n.t('Outlook Web'), l10n.t('Google Calendar')],
                     {
-                        placeHolder: l10n.t('calendar.chooseCalendar'),
+                        placeHolder: l10n.t('Choose calendar application for meeting creation'),
                         canPickMany: false
                     }
                 );
                 
                 if (!userChoice) {
-                    vscode.window.showInformationMessage(l10n.t('commands.calendarMeetingCancelled'));
+                    vscode.window.showInformationMessage(l10n.t('Calendar meeting creation cancelled.'));
                     return;
                 }
                 
@@ -347,24 +347,24 @@ export class Commands {
             
             let meetingUrl: string;
             
-            if (calendarChoice === l10n.t('calendar.outlookWeb')) {
+            if (calendarChoice === l10n.t('Outlook Web')) {
                 meetingUrl = `https://outlook.office.com/calendar/action/compose?subject=${subject}&body=${body}&startdt=${startDate}`;
-            } else if (calendarChoice === l10n.t('calendar.googleCalendar')) {
+            } else if (calendarChoice === l10n.t('Google Calendar')) {
                 // Google Calendar requires dates in YYYYMMDDTHHMMSSZ format
                 const googleStartDate = this.formatDateForGoogleCalendar(task.dueDate);
                 const googleEndDate = this.formatDateForGoogleCalendar(new Date(task.dueDate.getTime() + 60 * 60 * 1000)); // 1 hour later
                 meetingUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${subject}&details=${body}&dates=${googleStartDate}/${googleEndDate}`;
             } else {
-                vscode.window.showErrorMessage(l10n.t('commands.calendarChoiceInvalid'));
+                vscode.window.showErrorMessage(l10n.t('Invalid calendar choice'));
                 return;
             }
             
             // Open the meeting URL
             await vscode.env.openExternal(vscode.Uri.parse(meetingUrl));
-            vscode.window.showInformationMessage(l10n.t('commands.calendarMeetingCreated', calendarChoice, task.title));
+            vscode.window.showInformationMessage(l10n.t('Opening {0} for: {1}', calendarChoice, task.title));
             
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.calendarMeetingError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to create calendar meeting: {0}', String(error)));
         }
     }
 
@@ -386,24 +386,24 @@ export class Commands {
      * Allows users to set their preferred calendar provider
      */
     private async setPreferredCalendar(): Promise<void> {
-        const currentSetting = vscode.workspace.getConfiguration('recurringTasks').get<string>('preferredCalendar', l10n.t('calendar.askEachTime'));
+        const currentSetting = vscode.workspace.getConfiguration('recurringTasks').get<string>('preferredCalendar', l10n.t('Ask each time'));
         
         const choice = await vscode.window.showQuickPick(
-            [l10n.t('calendar.outlookWeb'), l10n.t('calendar.googleCalendar'), l10n.t('calendar.askEachTime')],
+            [l10n.t('Outlook Web'), l10n.t('Google Calendar'), l10n.t('Ask each time')],
             {
-                placeHolder: l10n.t('calendar.preferredCalendarPrompt', currentSetting),
+                placeHolder: l10n.t('Current setting: {0}. Choose your preferred calendar:', currentSetting),
                 canPickMany: false
             }
         );
         
         // Check if user cancelled (pressed Escape)
         if (!choice) {
-            vscode.window.showInformationMessage(l10n.t('commands.calendarPreferenceCancelled'));
+            vscode.window.showInformationMessage(l10n.t('Calendar preference setting cancelled'));
             return;
         }
         
         await vscode.workspace.getConfiguration('recurringTasks').update('preferredCalendar', choice, vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage(l10n.t('commands.calendarPreferenceSet', choice));
+        vscode.window.showInformationMessage(l10n.t('Preferred calendar set to: {0}', choice));
     }
 
     /**
@@ -428,7 +428,7 @@ export class Commands {
         const tasks = this.taskManager.getTasks();
         
         if (tasks.length === 0) {
-            vscode.window.showInformationMessage(l10n.t('commands.noTasksAvailable'));
+            vscode.window.showInformationMessage(l10n.t('No active tasks available.'));
             return undefined;
         }
 
@@ -441,7 +441,7 @@ export class Commands {
         }));
 
         const selectedItem = await vscode.window.showQuickPick(taskItems, {
-            placeHolder: l10n.t('commands.selectTaskPlaceholder'),
+            placeHolder: l10n.t('Select a task to perform the action on'),
             canPickMany: false
         });
 
@@ -480,9 +480,9 @@ export class Commands {
         
         const choice = await vscode.window.showQuickPick(
             [
-                { label: l10n.t('calendar.firstDayOfWeekAuto'), value: 'auto', description: `Current: ${currentSetting === 'auto' ? l10n.t('calendar.firstDayOfWeekAuto') : currentSetting}` },
-                { label: l10n.t('calendar.firstDayOfWeekSunday'), value: 'sunday', description: l10n.t('calendar.firstDayOfWeekSundayDesc') },
-                { label: l10n.t('calendar.firstDayOfWeekMonday'), value: 'monday', description: l10n.t('calendar.firstDayOfWeekMondayDesc') }
+                { label: l10n.t('Auto (use locale)'), value: 'auto', description: `Current: ${currentSetting === 'auto' ? l10n.t('Auto (use locale)') : currentSetting}` },
+                { label: l10n.t('Sunday'), value: 'sunday', description: l10n.t('Start week on Sunday') },
+                { label: l10n.t('Monday'), value: 'monday', description: l10n.t('Start week on Monday') }
             ],
             {
                 placeHolder: `Current setting: ${currentSetting}. Choose first day of week:`,
@@ -492,12 +492,12 @@ export class Commands {
         
         // Check if user cancelled (pressed Escape)
         if (!choice) {
-            vscode.window.showInformationMessage(l10n.t('commands.firstDayOfWeekCancelled'));
+            vscode.window.showInformationMessage(l10n.t('First day of week setting cancelled'));
             return;
         }
         
         await vscode.workspace.getConfiguration('recurringTasks.calendar').update('firstDayOfWeek', choice.value, vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage(l10n.t('commands.firstDayOfWeekSet', choice.label));
+        vscode.window.showInformationMessage(l10n.t('First day of week set to: {0}', choice.label));
         
         // Refresh the calendar to show the change
         this.calendarProvider.refresh();
@@ -515,7 +515,7 @@ export class Commands {
             const daysOverdue = Math.floor((now.getTime() - task.dueDate.getTime()) / (1000 * 60 * 60 * 24));
             return `Overdue by ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''}`;
         } else if (isDueToday) {
-            return l10n.t('commands.dueToday');
+            return l10n.t('Due today');
         } else {
             const daysUntilDue = Math.floor((task.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             return `Due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`;
@@ -532,12 +532,12 @@ export class Commands {
             
             if (!initialized) {
                 const result = await vscode.window.showWarningMessage(
-                    l10n.t('commands.jiraNotConfigured'),
-                    l10n.t('jira.configureJiraButton'),
-                    l10n.t('common.cancel')
+                    l10n.t('JIRA is not configured. Please configure JIRA settings first.'),
+                    l10n.t('Configure JIRA'),
+                    l10n.t('Cancel')
                 );
                 
-                if (result === l10n.t('jira.configureJiraButton')) {
+                if (result === l10n.t('Configure JIRA')) {
                     await this.configureJira();
                 }
                 return;
@@ -557,7 +557,7 @@ export class Commands {
                 const projectsResult = await this.jiraService.getProjects();
                 
                 if (!projectsResult.success) {
-                    vscode.window.showErrorMessage(l10n.t('commands.jiraProjectsError', projectsResult.message));
+                    vscode.window.showErrorMessage(l10n.t('Failed to get JIRA projects: {0}', projectsResult.message));
                     return;
                 }
 
@@ -583,13 +583,13 @@ export class Commands {
                     }));
 
                     const selectedProject = await vscode.window.showQuickPick(projectItems, {
-                        placeHolder: l10n.t('jira.selectProjectPrompt'),
+                        placeHolder: l10n.t('Select JIRA project:'),
                         canPickMany: false
                     });
 
                     // Check if user cancelled (pressed Escape)
                     if (!selectedProject) {
-                        vscode.window.showInformationMessage(l10n.t('commands.jiraIssueCancelled'));
+                        vscode.window.showInformationMessage(l10n.t('JIRA issue creation cancelled'));
                         return;
                     }
 
@@ -597,7 +597,7 @@ export class Commands {
                 }
 
                 if (!selectedProjectKey) {
-                    vscode.window.showErrorMessage(l10n.t('commands.jiraNoProjectSelected'));
+                    vscode.window.showErrorMessage(l10n.t('No JIRA project selected'));
                     return;
                 }
 
@@ -621,13 +621,13 @@ export class Commands {
                     }));
 
                     const selectedIssueTypeItem = await vscode.window.showQuickPick(issueTypeItems, {
-                        placeHolder: l10n.t('jira.selectIssueTypePrompt'),
+                        placeHolder: l10n.t('Select issue type:'),
                         canPickMany: false
                     });
 
                     // Check if user cancelled (pressed Escape)
                     if (!selectedIssueTypeItem) {
-                        vscode.window.showInformationMessage(l10n.t('commands.jiraIssueCancelled'));
+                        vscode.window.showInformationMessage(l10n.t('JIRA issue creation cancelled'));
                         return;
                     }
 
@@ -644,23 +644,23 @@ export class Commands {
                 if (result.success) {
                     const action = await vscode.window.showInformationMessage(
                         `${result.message}`,
-                        l10n.t('jira.viewIssue'),
-                        l10n.t('jira.copyUrl')
+                        l10n.t('View Issue'),
+                        l10n.t('Copy URL')
                     );
 
-                    if (action === l10n.t('jira.viewIssue') && result.url) {
+                    if (action === l10n.t('View Issue') && result.url) {
                         await vscode.env.openExternal(vscode.Uri.parse(result.url));
-                    } else if (action === l10n.t('jira.copyUrl') && result.url) {
+                    } else if (action === l10n.t('Copy URL') && result.url) {
                         await vscode.env.clipboard.writeText(result.url);
-                        vscode.window.showInformationMessage(l10n.t('commands.jiraIssueUrlCopied'));
+                        vscode.window.showInformationMessage(l10n.t('JIRA issue URL copied to clipboard'));
                     }
                 } else {
-                    vscode.window.showErrorMessage(l10n.t('commands.jiraIssueError', result.message));
+                    vscode.window.showErrorMessage(l10n.t('Failed to create JIRA issue: {0}', result.message));
                 }
             });
 
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.jiraIssueError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to create JIRA issue: {0}', String(error)));
         }
     }
 
@@ -669,19 +669,19 @@ export class Commands {
      */
     private async configureJira(): Promise<void> {
         const result = await vscode.window.showInformationMessage(
-            l10n.t('jira.configureJiraMessage'),
-            l10n.t('notifications.openSettings'),
+            l10n.t('Configure JIRA settings to create issues from tasks. Click OK to open JIRA configuration.'),
+            l10n.t('Open Settings'),
             'Show Instructions'
         );
 
-        if (result === l10n.t('notifications.openSettings')) {
+        if (result === l10n.t('Open Settings')) {
             await vscode.commands.executeCommand('workbench.action.openSettings', 'recurringTasks.jira');
         } else if (result === 'Show Instructions') {
-            const instructions = l10n.t('webview.jira.configInstructions');
+            const instructions = l10n.t('# JIRA Configuration Instructions\n\n1. **Base URL**: Your JIRA instance URL (e.g., https://yourcompany.atlassian.net)\n2. **Email**: Your JIRA account email address\n3. **API Token**: Create one at https://id.atlassian.com/manage-profile/security/api-tokens\n4. **Default Project Key**: The key of your default project (e.g., "PROJ")\n5. **Default Issue Type**: The default issue type (e.g., "Task", "Bug", "Story")\n\nYou can set these in VS Code Settings (Ctrl+,) under "Recurring Tasks > Jira".');
 
             const panel = vscode.window.createWebviewPanel(
                 'jiraConfig',
-                l10n.t('webview.jira.configTitle'),
+                l10n.t('JIRA Configuration Instructions'),
                 vscode.ViewColumn.One,
                 { 
                     enableScripts: false,
@@ -724,7 +724,7 @@ export class Commands {
                 const initialized = await this.jiraService.initialize();
                 
                 if (!initialized) {
-                    vscode.window.showWarningMessage(l10n.t('commands.jiraNotConfigured'));
+                    vscode.window.showWarningMessage(l10n.t('JIRA is not configured. Please configure JIRA settings first.'));
                     return;
                 }
 
@@ -735,13 +735,13 @@ export class Commands {
                 progress.report({ increment: 100, message: 'Done!' });
                 
                 if (result.success) {
-                    vscode.window.showInformationMessage(l10n.t('commands.jiraConnectionSuccess', result.message));
+                    vscode.window.showInformationMessage(l10n.t('✅ JIRA Connection Successful!\n{0}', result.message));
                 } else {
-                    vscode.window.showErrorMessage(l10n.t('commands.jiraConnectionFailed', result.message));
+                    vscode.window.showErrorMessage(l10n.t('❌ JIRA Connection Failed!\n{0}', result.message));
                 }
             });
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.jiraConnectionError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Error testing JIRA connection: {0}', String(error)));
         }
     }
 
@@ -753,7 +753,7 @@ export class Commands {
             const tasks = this.taskManager.getAllTasks();
             
             if (tasks.length === 0) {
-                vscode.window.showInformationMessage(l10n.t('commands.noTasksToExport'));
+                vscode.window.showInformationMessage(l10n.t('No tasks to export.'));
                 return;
             }
 
@@ -772,7 +772,7 @@ export class Commands {
             });
 
             if (!saveUri) {
-                vscode.window.showInformationMessage(l10n.t('commands.exportCancelled'));
+                vscode.window.showInformationMessage(l10n.t('Export cancelled.'));
                 return;
             }
 
@@ -783,7 +783,7 @@ export class Commands {
             await vscode.workspace.fs.writeFile(saveUri, Buffer.from(jsonData, 'utf8'));
             
             const action = await vscode.window.showInformationMessage(
-                l10n.t('commands.exportSuccess', saveUri.fsPath),
+                l10n.t('Tasks exported successfully to {0}', saveUri.fsPath),
                 'Open File',
                 'Show in Explorer'
             );
@@ -795,7 +795,7 @@ export class Commands {
             }
 
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.exportError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to export tasks: {0}', String(error)));
         }
     }
 
@@ -817,7 +817,7 @@ export class Commands {
             });
 
             if (!openUri || openUri.length === 0) {
-                vscode.window.showInformationMessage(l10n.t('commands.importCancelled'));
+                vscode.window.showInformationMessage(l10n.t('Import cancelled.'));
                 return;
             }
 
@@ -873,12 +873,12 @@ export class Commands {
                         vscode.window.showInformationMessage(message);
                     }
                 } else {
-                    vscode.window.showErrorMessage(l10n.t('commands.importError', result.message));
+                    vscode.window.showErrorMessage(l10n.t('Failed to import tasks: {0}', result.message));
                 }
             });
 
         } catch (error) {
-            vscode.window.showErrorMessage(l10n.t('commands.importError', String(error)));
+            vscode.window.showErrorMessage(l10n.t('Failed to import tasks: {0}', String(error)));
         }
     }
 } 

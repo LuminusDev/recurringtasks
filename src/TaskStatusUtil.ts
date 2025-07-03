@@ -21,16 +21,16 @@ export class TaskStatusUtil {
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) {
-            return l10n.t('taskStatus.overdueBy', Math.abs(diffDays), Math.abs(diffDays) !== 1 ? 's' : '');
+            return l10n.t('Overdue by {0} day{1}', Math.abs(diffDays), Math.abs(diffDays) !== 1 ? 's' : '');
         } else if (diffDays === 0) {
-            return l10n.t('taskStatus.dueToday');
+            return l10n.t('Due today');
         } else if (diffDays === 1) {
-            return l10n.t('taskStatus.dueTomorrow');
+            return l10n.t('Due tomorrow');
         } else if (diffDays <= 7) {
-            return l10n.t('taskStatus.dueInDays', diffDays);
+            return l10n.t('Due in {0} days', diffDays);
         } else {
             const diffWeeks = Math.ceil(diffDays / 7);
-            return l10n.t('taskStatus.dueInWeeks', diffWeeks, diffWeeks !== 1 ? 's' : '');
+            return l10n.t('Due in {0} week{1}', diffWeeks, diffWeeks !== 1 ? 's' : '');
         }
     }
 
@@ -224,7 +224,7 @@ export class TaskStatusUtil {
     static getComprehensiveStatus(task: Task): string {
         // For archived one-shot tasks, show completion message
         if (task.status === 'archived' && (!task.periodicity.isRecurring || task.periodicity.type === 'none')) {
-            return l10n.t('taskStatus.oneShotCompleted');
+            return l10n.t('✅ Completed');
         }
         
         const progress = TaskStatusUtil.getTimeProgress(task);
@@ -233,21 +233,21 @@ export class TaskStatusUtil {
         // Determine status based on both urgency and progress
         if (TaskStatusUtil.isOverdue(task)) {
             if (progress >= 100) {
-                return l10n.t('taskStatus.overdueComplete', timeRemaining);
+                return l10n.t('🔴 {0}', timeRemaining);
             } else {
-                return l10n.t('taskStatus.overdueInProgress', timeRemaining);
+                return l10n.t('🔴 {0}', timeRemaining);
             }
         } else if (TaskStatusUtil.isDueSoon(task)) {
             if (progress >= 80) {
-                return l10n.t('taskStatus.dueSoonNearlyComplete', timeRemaining);
+                return l10n.t('🟡 {0}', timeRemaining);
             } else {
-                return l10n.t('taskStatus.dueSoonNeedsAttention', timeRemaining);
+                return l10n.t('🟡 {0}', timeRemaining);
             }
         } else {
             if (progress >= 100) {
-                return l10n.t('taskStatus.complete', timeRemaining);
+                return l10n.t('✅ {0}', timeRemaining);
             } else {
-                return l10n.t('taskStatus.onTrackGoodProgress', timeRemaining);
+                return l10n.t('✅ {0}', timeRemaining);
             }
         }
     }
