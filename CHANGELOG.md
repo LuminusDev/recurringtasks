@@ -4,6 +4,70 @@ All notable changes to the "recurringtasks" extension will be documented in this
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.1.0] - 2024-12-19
+
+### Added
+
+- **Smart Task Notifications System**
+
+  - **Intelligent Notification Management**: Automatic notifications for due and overdue tasks with smart throttling
+  - **Configurable Notification Frequency**: Choose between immediate, hourly, daily, or disabled notifications
+  - **Notification State Tracking**: Persistent tracking of notification states per task to prevent spam
+  - **Smart Snooze Functionality**: Temporarily suppress notifications with duration based on frequency setting
+  - **Notification Actions**: Quick actions from notifications including validate task, show details, snooze, or disable
+  - **Overdue-Only Mode**: Option to only show notifications for overdue tasks, not tasks due today
+  - **Maximum Notifications Per Task**: Prevent notification spam by limiting notifications per task
+  - **Notification Reactivation**: Manually reactivate notifications for specific tasks from task details view
+  - **Global Notification Controls**: Enable/disable all notifications globally with easy settings access
+  - **Real-time Notification Status**: View current notification state for each task in the details view
+
+- **Calendar View Integration**
+
+  - **Monthly Calendar View**: Visual calendar showing all tasks organized by due date
+  - **Calendar Navigation**: Navigate between months with previous/next buttons and "Go to Today" functionality
+  - **Task Visualization**: Tasks displayed as colored dots on calendar dates with status indicators
+  - **Interactive Calendar**: Click on task dots to view task details or validate tasks directly
+  - **Responsive Design**: Calendar adapts to different sidebar widths with optimized layouts
+  - **First Day of Week Configuration**: Customizable first day of week (Sunday/Monday/Auto based on locale)
+  - **Calendar Refresh**: Manual refresh button to update calendar view
+  - **Task Status Colors**: Visual indicators for overdue (red), due soon (yellow), and normal (blue) tasks
+  - **Calendar Integration**: Seamless integration with existing task management features
+
+- **Enhanced Task Management**
+
+  - **Notification Status Display**: View notification state and history in task details view
+  - **Reactivate Notifications**: One-click reactivation of notifications for individual tasks
+  - **Notification Statistics**: Track notification counts and settings in task details
+  - **Improved Task Details**: Enhanced task details view with notification information
+  - **Better Visual Feedback**: Clear indication of notification states and limits
+
+- **Configuration Enhancements**
+
+  - **Notification Settings**: Comprehensive notification configuration options
+  - **Calendar Preferences**: First day of week setting for calendar display
+  - **Settings Integration**: All new settings integrated into VS Code's settings system
+  - **Global and Workspace Settings**: Support for both global and workspace-specific configurations
+
+- **User Experience Improvements**
+
+  - **Command Palette Integration**: New commands for notification management and calendar access
+  - **Context Menu Actions**: Right-click options for notification reactivation
+  - **Keyboard Shortcuts**: Quick access to notification and calendar features
+  - **Localization Support**: Full French translation for all new features
+  - **Accessibility**: Improved accessibility with proper ARIA labels and keyboard navigation
+
+- **Internationalization**
+
+  - **French Language Support**: Complete French localization (l10n) for all new features
+
+### Technical Improvements
+
+- **Notification Manager**: New dedicated class for handling all notification logic
+- **Calendar Provider**: New webview provider for calendar functionality
+- **Enhanced Error Handling**: Better error handling for notification and calendar features
+- **Performance Optimizations**: Efficient notification checking and calendar rendering
+- **Code Organization**: Improved code structure with dedicated managers and providers
+
 ## [1.0.0] - 2024-12-19
 
 ### Added

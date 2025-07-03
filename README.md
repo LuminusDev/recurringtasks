@@ -12,6 +12,8 @@ A VS Code extension for managing recurring tasks with periodicity, validation, a
 - **Webview Task Creation**: Create new tasks using a modern webview form interface
 - **Inline Task Editing**: Edit task properties (title, description, periodicity) directly from the task details view
 - **Task Validation**: Mark tasks as complete with comments and automatically calculate next due date
+- **Smart Task Notifications**: Intelligent notification system for due and overdue tasks with configurable frequency
+- **Calendar View**: Monthly calendar view showing all tasks organized by due date with interactive navigation
 - **Calendar Meeting Creation**: Create calendar meetings from tasks with automatic pre-filling of details
 - **Multi-Calendar Support**: Choose between Outlook Web and Google Calendar for meeting creation
 - **Calendar Preferences**: Set your preferred calendar provider to avoid repeated prompts
@@ -117,6 +119,121 @@ To avoid the calendar selection prompt every time:
 
 - **Create Meeting**: `Ctrl+Shift+M` (when in the tasks view)
   - Creates a meeting for the first available task if no specific task is selected
+
+### Smart Task Notifications
+
+The extension includes an intelligent notification system that helps you stay on top of your tasks:
+
+#### How Notifications Work
+
+- **Automatic Checking**: The system periodically checks for due and overdue tasks
+- **Smart Throttling**: Notifications are intelligently throttled to prevent spam
+- **Task Status Awareness**: Only active tasks receive notifications (archived tasks are ignored)
+- **Real-time Updates**: Notification states are immediately reflected in the task details view
+
+#### Notification Actions
+
+When a notification appears, you have several options:
+
+1. **Validate Task**: Mark the task as complete with an optional comment
+2. **Show Details**: Open the task details view to see full information
+3. **Snooze**: Temporarily suppress notifications for this task
+4. **Disable Notifications**: Turn off all notifications globally
+
+#### Smart Snooze Duration
+
+The snooze duration automatically adapts to your notification frequency:
+
+- **Immediate frequency**: Snooze for 30 minutes
+- **Hourly frequency**: Snooze for 2 hours (longer than frequency for effectiveness)
+- **Daily frequency**: Snooze for 6 hours
+- **Disabled frequency**: Snooze for 24 hours
+
+This ensures that snoozing is always meaningful and gives you appropriate time to handle tasks.
+
+#### Notification Settings
+
+Configure your notification preferences in VS Code settings:
+
+1. **Open Settings**: Press `Ctrl+,` and search for "Recurring Tasks Notifications"
+2. **Configure options**:
+   - **Enabled**: Turn notifications on/off globally
+   - **Frequency**: Choose how often notifications can appear
+   - **Show Overdue Only**: Only notify about overdue tasks
+   - **Max Notifications Per Task**: Limit notifications per task to avoid spam
+
+#### Notification Frequency Options
+
+- **Immediate**: Show notifications as soon as tasks become due/overdue
+- **Hourly**: Show at most once per hour (default)
+- **Daily**: Show at most once per day
+- **Disabled**: Never show notifications
+
+#### Managing Notification States
+
+##### Viewing Notification State
+
+- **Task Details View**: Open any task to see its current notification state
+- **Real-time Updates**: The notification state updates automatically when notifications are shown, snoozed, or reactivated
+
+##### Reactivating Notifications
+
+- **From Task Details**: Click the "Reactivate Notifications" button in the task details view
+- **From Context Menu**: Right-click on a task and select "Reactivate Notifications"
+- **Manual Check**: Use "Check Notifications Now" command to manually trigger notification checks
+
+#### Notification Commands
+
+- **Check Notifications Now**: `Ctrl+Shift+P` → "Recurring Tasks: Check Notifications Now"
+- **Reset Notification States**: `Ctrl+Shift+P` → "Recurring Tasks: Reset Notification States"
+- **Notification Settings**: `Ctrl+Shift+P` → "Recurring Tasks: Notification Settings"
+
+### Calendar View
+
+The extension includes a comprehensive calendar view that shows all your tasks organized by due date:
+
+#### Accessing the Calendar
+
+- **Sidebar Tab**: Click the "Calendar" tab in the Recurring Tasks sidebar
+- **Command**: `Ctrl+Shift+P` → "Recurring Tasks: Show Calendar View"
+- **Button**: Click the calendar button in the tasks view header
+
+#### Calendar Features
+
+- **Monthly View**: See all tasks for the current month at a glance
+- **Navigation**: Use previous/next month buttons or "Go to Today" to navigate
+- **Task Visualization**: Tasks appear as colored dots on their due dates
+- **Status Colors**:
+  - **Red dots**: Overdue tasks
+  - **Yellow dots**: Tasks due soon
+  - **Blue dots**: Normal tasks
+- **Interactive**: Click on any task dot to view task details or validate the task
+- **Responsive**: Calendar adapts to different sidebar widths
+
+#### Calendar Configuration
+
+##### First Day of Week
+
+You can customize which day starts your week:
+
+1. **Method 1 - Command Palette**:
+
+   - Press `Ctrl+Shift+P`
+   - Type "Recurring Tasks: Set First Day of Week"
+   - Choose your preference
+
+2. **Method 2 - VS Code Settings**:
+   - Open Settings (`Ctrl+,`)
+   - Search for "Recurring Tasks Calendar"
+   - Set "First Day of Week" to:
+     - **Auto**: Uses your system locale (Monday for most countries, Sunday for US)
+     - **Sunday**: Always start week on Sunday
+     - **Monday**: Always start week on Monday
+
+#### Calendar Commands
+
+- **Show Calendar**: `Ctrl+Shift+P` → "Recurring Tasks: Show Calendar View"
+- **Set First Day of Week**: `Ctrl+Shift+P` → "Recurring Tasks: Set First Day of Week"
 
 ### Creating JIRA Issues
 
@@ -410,6 +527,14 @@ This extension includes the following configuration options:
 - **`recurringTasks.notifications.maxNotificationsPerTask`**: Maximum number of notifications per task
   - **Options**: 1-50
   - **Default**: 5
+  - **Scope**: Global
+
+### Calendar Settings
+
+- **`recurringTasks.calendar.firstDayOfWeek`**: First day of the week for calendar display
+
+  - **Options**: "auto", "sunday", "monday"
+  - **Default**: "auto" (uses system locale)
   - **Scope**: Global
 
 ## Known Issues
