@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { l10n } from 'vscode';
 
 // Import our custom classes
 import { StorageManager } from './StorageManager';
@@ -22,7 +23,7 @@ let notificationManager: NotificationManager;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	console.log('RecurringTasks extension is now active!');
+	console.log(l10n.t('extension.activating'));
 
 	try {
 		// Initialize the storage manager
@@ -91,17 +92,17 @@ export function activate(context: vscode.ExtensionContext) {
 		// Add the tree view and calendar webview to subscriptions
 		context.subscriptions.push(treeView, calendarWebview);
 		
-		console.log('RecurringTasks extension initialized successfully');
+		console.log(l10n.t('extension.initialized'));
 		
 	} catch (error) {
 		console.error('Failed to initialize RecurringTasks extension:', error);
-		vscode.window.showErrorMessage('Failed to initialize RecurringTasks extension. Please check the console for details.');
+		vscode.window.showErrorMessage(l10n.t('extension.initializationError'));
 	}
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {
-	console.log('RecurringTasks extension is now deactivated');
+	console.log(l10n.t('extension.deactivating'));
 	
 	// Clean up any resources if needed
 	if (taskProvider) {

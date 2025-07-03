@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { l10n } from 'vscode';
 import { Task } from './Task';
 import { TaskManager } from './TaskManager';
 import { TaskStatusUtil } from './TaskStatusUtil';
@@ -94,8 +95,18 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 
         // Month names
         const monthNames = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
+            l10n.t('webview.calendar.months.january'),
+            l10n.t('webview.calendar.months.february'),
+            l10n.t('webview.calendar.months.march'),
+            l10n.t('webview.calendar.months.april'),
+            l10n.t('webview.calendar.months.may'),
+            l10n.t('webview.calendar.months.june'),
+            l10n.t('webview.calendar.months.july'),
+            l10n.t('webview.calendar.months.august'),
+            l10n.t('webview.calendar.months.september'),
+            l10n.t('webview.calendar.months.october'),
+            l10n.t('webview.calendar.months.november'),
+            l10n.t('webview.calendar.months.december')
         ];
 
         // Group tasks by date
@@ -106,7 +117,7 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasks Calendar</title>
+    <title>${l10n.t('webview.calendar.title')}</title>
     <style>
         body {
             font-family: var(--vscode-font-family);
@@ -338,12 +349,12 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
 <body>
     <div class="calendar-header">
         <div class="calendar-nav">
-            <button class="nav-button" onclick="previousMonth()" title="Previous Month">‹</button>
-            <button class="nav-button" onclick="nextMonth()" title="Next Month">›</button>
-            <button class="nav-button" onclick="goToToday()" title="Go to Today">⌂</button>
+            <button class="nav-button" onclick="previousMonth()" title="${l10n.t('webview.calendar.previousMonth')}">‹</button>
+            <button class="nav-button" onclick="nextMonth()" title="${l10n.t('webview.calendar.nextMonth')}">›</button>
+            <button class="nav-button" onclick="goToToday()" title="${l10n.t('webview.calendar.goToToday')}">⌂</button>
         </div>
         <div class="month-title">${monthNames[month]} ${year}</div>
-        <button class="refresh-button" onclick="refresh()" title="Refresh Calendar">⟳</button>
+        <button class="refresh-button" onclick="refresh()" title="${l10n.t('webview.calendar.refresh')}">⟳</button>
     </div>
 
     <div class="calendar-grid">
@@ -402,7 +413,15 @@ export class CalendarProvider implements vscode.WebviewViewProvider {
     }
 
     private _generateDayHeaders(firstDayOfWeek: number): string {
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayNames = [
+            l10n.t('webview.calendar.days.sun'),
+            l10n.t('webview.calendar.days.mon'),
+            l10n.t('webview.calendar.days.tue'),
+            l10n.t('webview.calendar.days.wed'),
+            l10n.t('webview.calendar.days.thu'),
+            l10n.t('webview.calendar.days.fri'),
+            l10n.t('webview.calendar.days.sat')
+        ];
         let html = '';
         
         // Generate headers starting from the specified first day

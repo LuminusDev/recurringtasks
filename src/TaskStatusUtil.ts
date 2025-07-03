@@ -1,4 +1,5 @@
 import { Task } from './Task';
+import { l10n } from 'vscode';
 
 /**
  * Utility class for calculating task status, progress, and time-related information
@@ -20,16 +21,16 @@ export class TaskStatusUtil {
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) {
-            return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''}`;
+            return l10n.t('taskStatus.overdueBy', Math.abs(diffDays), Math.abs(diffDays) !== 1 ? 's' : '');
         } else if (diffDays === 0) {
-            return 'Due today';
+            return l10n.t('taskStatus.dueToday');
         } else if (diffDays === 1) {
-            return 'Due tomorrow';
+            return l10n.t('taskStatus.dueTomorrow');
         } else if (diffDays <= 7) {
-            return `Due in ${diffDays} days`;
+            return l10n.t('taskStatus.dueInDays', diffDays);
         } else {
             const diffWeeks = Math.ceil(diffDays / 7);
-            return `Due in ${diffWeeks} week${diffWeeks !== 1 ? 's' : ''}`;
+            return l10n.t('taskStatus.dueInWeeks', diffWeeks, diffWeeks !== 1 ? 's' : '');
         }
     }
 
@@ -218,64 +219,35 @@ export class TaskStatusUtil {
     }
 
     /**
-     * Creates a simple progress bar using Unicode characters
-     */
-    static createProgressBar(progress: number): string {
-        const filledBlocks = Math.floor(progress / 10);
-        const emptyBlocks = 10 - filledBlocks;
-        
-        return '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
-    }
-
-    /**
-     * Returns a combined status and progress description
-     */
-    static getMixedStatusAndProgress(task: Task): string {
-        const progress = TaskStatusUtil.getTimeProgress(task);
-        const timeRemaining = TaskStatusUtil.getTimeRemaining(task);
-        
-        // Create status indicators
-        let statusIndicator = '';
-        if (TaskStatusUtil.isOverdue(task)) {
-            statusIndicator = '🔴 ';
-        } else if (TaskStatusUtil.isDueSoon(task)) {
-            statusIndicator = '🟡 ';
-        } else {
-            statusIndicator = '✅ ';
-        }
-        
-        // Create a simple progress bar using Unicode characters
-        const progressBar = TaskStatusUtil.createProgressBar(progress);
-        
-        // Combine progress and status
-        return `${statusIndicator}${progressBar} ${progress}% | ${timeRemaining}`;
-    }
-
-    /**
      * Creates a comprehensive status that considers both urgency and progress
      */
     static getComprehensiveStatus(task: Task): string {
+        // For archived one-shot tasks, show completion message
+        if (task.status === 'archived' && (!task.periodicity.isRecurring || task.periodicity.type === 'none')) {
+            return l10n.t('taskStatus.oneShotCompleted');
+        }
+        
         const progress = TaskStatusUtil.getTimeProgress(task);
         const timeRemaining = TaskStatusUtil.getTimeRemaining(task);
         
         // Determine status based on both urgency and progress
         if (TaskStatusUtil.isOverdue(task)) {
             if (progress >= 100) {
-                return `🔴 Overdue (${timeRemaining})`;
+                return l10n.t('taskStatus.overdueComplete', timeRemaining);
             } else {
-                return `🔴 Overdue - ${progress}% complete (${timeRemaining})`;
+                return l10n.t('taskStatus.overdueInProgress', timeRemaining);
             }
         } else if (TaskStatusUtil.isDueSoon(task)) {
             if (progress >= 80) {
-                return `🟡 Due soon - ${progress}% complete (${timeRemaining})`;
+                return l10n.t('taskStatus.dueSoonNearlyComplete', timeRemaining);
             } else {
-                return `🟡 Due soon - ${progress}% complete (${timeRemaining})`;
+                return l10n.t('taskStatus.dueSoonNeedsAttention', timeRemaining);
             }
         } else {
             if (progress >= 100) {
-                return `✅ Complete (${timeRemaining})`;
+                return l10n.t('taskStatus.complete', timeRemaining);
             } else {
-                return `✅ ${progress}% complete (${timeRemaining})`;
+                return l10n.t('taskStatus.onTrackGoodProgress', timeRemaining);
             }
         }
     }

@@ -1,16 +1,17 @@
 {
   "name": "recurringtasks",
-  "displayName": "Recurring Tasks",
+  "displayName": "%displayName%",
   "publisher": "LuminusDev",
   "license": "MIT",
   "author": {
     "name": "LuminusDev"
   },
-  "description": "Manage recurring tasks with smart scheduling, calendar integration, and JIRA sync. Features automatic validation, meeting creation, export/import, and visual task organization.",
-  "version": "1.0.1",
+  "description": "%description%",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.93.0"
   },
+  "l10n": "./l10n",
   "categories": [
     "Other"
   ],
@@ -36,7 +37,7 @@
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Recurring Tasks",
+      "title": "%configuration.title%",
       "properties": {
         "recurringTasks.preferredCalendar": {
           "type": "string",
@@ -46,50 +47,50 @@
             "Ask each time"
           ],
           "default": "Ask each time",
-          "description": "Preferred calendar provider for creating meetings from tasks"
+          "description": "%configuration.preferredCalendar.description%"
         },
         "recurringTasks.jira.baseUrl": {
           "type": "string",
           "default": "",
-          "description": "JIRA instance base URL (e.g., https://yourcompany.atlassian.net)",
+          "description": "%configuration.jira.baseUrl.description%",
           "format": "uri"
         },
         "recurringTasks.jira.email": {
           "type": "string",
           "default": "",
-          "description": "Your JIRA account email address"
+          "description": "%configuration.jira.email.description%"
         },
         "recurringTasks.jira.apiToken": {
           "type": "string",
           "default": "",
-          "description": "JIRA API token (create one at https://id.atlassian.com/manage-profile/security/api-tokens)"
+          "description": "%configuration.jira.apiToken.description%"
         },
         "recurringTasks.jira.defaultProjectKey": {
           "type": "string",
           "default": "",
-          "description": "Default JIRA project key for creating issues"
+          "description": "%configuration.jira.defaultProjectKey.description%"
         },
         "recurringTasks.jira.defaultIssueType": {
           "type": "string",
           "default": "Task",
-          "description": "Default JIRA issue type for creating issues"
+          "description": "%configuration.jira.defaultIssueType.description%"
         },
         "recurringTasks.jira.autoAssignToMe": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically assign created JIRA issues to yourself"
+          "description": "%configuration.jira.autoAssignToMe.description%"
         },
         "recurringTasks.jira.maxProjectsToFetch": {
           "type": "number",
           "default": 1000,
           "minimum": 1,
           "maximum": 10000,
-          "description": "Maximum number of projects to fetch from JIRA (for large instances)"
+          "description": "%configuration.jira.maxProjectsToFetch.description%"
         },
         "recurringTasks.notifications.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable task notifications for due and overdue tasks"
+          "description": "%configuration.notifications.enabled.description%"
         },
         "recurringTasks.notifications.frequency": {
           "type": "string",
@@ -100,25 +101,25 @@
             "disabled"
           ],
           "default": "hourly",
-          "description": "How often to show notifications for the same task",
+          "description": "%configuration.notifications.frequency.description%",
           "enumDescriptions": [
-            "Show immediately when task becomes due/overdue",
-            "Show at most once per hour per task",
-            "Show at most once per day per task",
-            "Never show notifications"
+            "%configuration.notifications.frequency.immediate%",
+            "%configuration.notifications.frequency.hourly%",
+            "%configuration.notifications.frequency.daily%",
+            "%configuration.notifications.frequency.disabled%"
           ]
         },
         "recurringTasks.notifications.showOverdueOnly": {
           "type": "boolean",
           "default": false,
-          "description": "Only show notifications for overdue tasks, not tasks due today"
+          "description": "%configuration.notifications.showOverdueOnly.description%"
         },
         "recurringTasks.notifications.maxNotificationsPerTask": {
           "type": "number",
           "default": 5,
           "minimum": 1,
           "maximum": 50,
-          "description": "Maximum number of notifications to show per task before stopping"
+          "description": "%configuration.notifications.maxNotificationsPerTask.description%"
         },
         "recurringTasks.calendar.firstDayOfWeek": {
           "type": "string",
@@ -128,7 +129,7 @@
             "monday"
           ],
           "default": "auto",
-          "description": "First day of the week in the calendar view. 'auto' uses the user's locale setting."
+          "description": "%configuration.calendar.firstDayOfWeek.description%"
         }
       }
     },
@@ -136,7 +137,7 @@
       "activitybar": [
         {
           "id": "recurring-tasks",
-          "title": "Recurring Tasks",
+          "title": "%viewsContainers.recurring-tasks.title%",
           "icon": "$(tasklist)"
         }
       ]
@@ -145,117 +146,117 @@
       "recurring-tasks": [
         {
           "id": "recurringTasks.view",
-          "name": "Tasks",
+          "name": "%views.tasks.name%",
           "icon": "$(tasklist)",
-          "contextualTitle": "Recurring Tasks"
+          "contextualTitle": "%views.tasks.contextualTitle%"
         },
         {
           "id": "recurringTasks.calendar",
-          "name": "Calendar",
+          "name": "%views.calendar.name%",
           "type": "webview",
           "icon": "$(calendar)",
-          "contextualTitle": "Tasks Calendar"
+          "contextualTitle": "%views.calendar.contextualTitle%"
         }
       ]
     },
     "commands": [
       {
         "command": "recurringtasks.addTask",
-        "title": "Recurring Tasks: Add Task",
+        "title": "%commands.addTask.title%",
         "icon": "$(add)"
       },
       {
         "command": "recurringtasks.validateTask",
-        "title": "Validate Task",
+        "title": "%commands.validateTask.title%",
         "icon": "$(check)"
       },
       {
         "command": "recurringtasks.archiveTask",
-        "title": "Archive Task",
+        "title": "%commands.archiveTask.title%",
         "icon": "$(archive)"
       },
       {
         "command": "recurringtasks.unarchiveTask",
-        "title": "Unarchive Task",
+        "title": "%commands.unarchiveTask.title%",
         "icon": "$(debug-step-back)"
       },
       {
         "command": "recurringtasks.deleteTask",
-        "title": "Delete Task",
+        "title": "%commands.deleteTask.title%",
         "icon": "$(trash)"
       },
       {
         "command": "recurringtasks.refreshTasks",
-        "title": "Recurring Tasks: Refresh Tasks",
+        "title": "%commands.refreshTasks.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "recurringtasks.showTaskDetails",
-        "title": "Show Task Details"
+        "title": "%commands.showTaskDetails.title%"
       },
       {
         "command": "recurringtasks.createOutlookMeeting",
-        "title": "Create Calendar Meeting",
+        "title": "%commands.createOutlookMeeting.title%",
         "icon": "$(calendar)"
       },
       {
         "command": "recurringtasks.setPreferredCalendar",
-        "title": "Recurring Tasks: Set Preferred Calendar",
+        "title": "%commands.setPreferredCalendar.title%",
         "icon": "$(gear)"
       },
       {
         "command": "recurringtasks.createJiraIssue",
-        "title": "Create JIRA Issue",
+        "title": "%commands.createJiraIssue.title%",
         "icon": "$(bug)"
       },
       {
         "command": "recurringtasks.configureJira",
-        "title": "Recurring Tasks: Configure JIRA",
+        "title": "%commands.configureJira.title%",
         "icon": "$(settings-gear)"
       },
       {
         "command": "recurringtasks.testJiraConnection",
-        "title": "Recurring Tasks: Test JIRA Connection",
+        "title": "%commands.testJiraConnection.title%",
         "icon": "$(plug)"
       },
       {
         "command": "recurringtasks.exportTasks",
-        "title": "Recurring Tasks: Export Tasks",
+        "title": "%commands.exportTasks.title%",
         "icon": "$(export)"
       },
       {
         "command": "recurringtasks.importTasks",
-        "title": "Recurring Tasks: Import Tasks",
+        "title": "%commands.importTasks.title%",
         "icon": "$(cloud-download)"
       },
       {
         "command": "recurringtasks.checkNotifications",
-        "title": "Recurring Tasks: Check Notifications Now",
+        "title": "%commands.checkNotifications.title%",
         "icon": "$(bell)"
       },
       {
         "command": "recurringtasks.resetNotifications",
-        "title": "Recurring Tasks: Reset Notification States",
+        "title": "%commands.resetNotifications.title%",
         "icon": "$(clear-all)"
       },
       {
         "command": "recurringtasks.notificationSettings",
-        "title": "Recurring Tasks: Notification Settings",
+        "title": "%commands.notificationSettings.title%",
         "icon": "$(bell-dot)"
       },
       {
         "command": "recurringtasks.reactivateNotifications",
-        "title": "Recurring Tasks: Reactivate Notifications",
+        "title": "%commands.reactivateNotifications.title%",
         "icon": "$(bell-ring)"
       },
       {
         "command": "recurringtasks.showCalendar",
-        "title": "Recurring Tasks: Show Calendar View",
+        "title": "%commands.showCalendar.title%",
         "icon": "$(calendar)"
       },
       {
         "command": "recurringtasks.setFirstDayOfWeek",
-        "title": "Recurring Tasks: Set First Day of Week",
+        "title": "%commands.setFirstDayOfWeek.title%",
         "icon": "$(gear)"
       }
     ],

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { l10n } from 'vscode';
 import { Task } from './Task';
 import { TaskManager } from './TaskManager';
 import { TaskStatusUtil } from './TaskStatusUtil';
@@ -22,7 +23,7 @@ export class TaskTreeItem extends vscode.TreeItem {
         // Add command to show task details when clicked
         this.command = {
             command: 'recurringtasks.showTaskDetails',
-            title: 'Show Task Details',
+            title: l10n.t('taskStatus.showTaskDetails'),
             arguments: [task]
         };
         
@@ -112,16 +113,16 @@ export class TaskProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
             const categories: CategoryTreeItem[] = [];
             if (overdueTasks.length > 0) {
-                categories.push(new CategoryTreeItem('Overdue', vscode.TreeItemCollapsibleState.Expanded, overdueTasks));
+                categories.push(new CategoryTreeItem(l10n.t('taskProvider.overdue'), vscode.TreeItemCollapsibleState.Expanded, overdueTasks));
             }
             if (dueSoonTasks.length > 0) {
-                categories.push(new CategoryTreeItem('Due Soon', vscode.TreeItemCollapsibleState.Expanded, dueSoonTasks));
+                categories.push(new CategoryTreeItem(l10n.t('taskProvider.dueSoon'), vscode.TreeItemCollapsibleState.Expanded, dueSoonTasks));
             }
             if (otherTasks.length > 0) {
-                categories.push(new CategoryTreeItem('Upcoming', vscode.TreeItemCollapsibleState.Expanded, otherTasks));
+                categories.push(new CategoryTreeItem(l10n.t('taskProvider.upcoming'), vscode.TreeItemCollapsibleState.Expanded, otherTasks));
             }
             if (archivedTasks.length > 0) {
-                categories.push(new CategoryTreeItem('Archived', vscode.TreeItemCollapsibleState.Collapsed, archivedTasks));
+                categories.push(new CategoryTreeItem(l10n.t('taskProvider.archived'), vscode.TreeItemCollapsibleState.Collapsed, archivedTasks));
             }
 
             return Promise.resolve(categories);
